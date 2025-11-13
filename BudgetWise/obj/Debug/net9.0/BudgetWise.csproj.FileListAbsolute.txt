@@ -433,3 +433,7 @@ C:\Users\zacha\source\ctrl-alt-elite-project\Budgetwise\obj\Debug\net9.0\refint\
 C:\Users\zacha\source\ctrl-alt-elite-project\Budgetwise\obj\Debug\net9.0\BudgetWise.pdb
 C:\Users\zacha\source\ctrl-alt-elite-project\Budgetwise\obj\Debug\net9.0\BudgetWise.genruntimeconfig.cache
 C:\Users\zacha\source\ctrl-alt-elite-project\Budgetwise\obj\Debug\net9.0\ref\BudgetWise.dll
+C:\Users\zacha\source\ctrl-alt-elite-project\BudgetWise\bin\Debug\net9.0\Microsoft.AspNetCore.Authorization.dll
+C:\Users\zacha\source\ctrl-alt-elite-project\BudgetWise\bin\Debug\net9.0\Microsoft.AspNetCore.Components.dll
+C:\Users\zacha\source\ctrl-alt-elite-project\BudgetWise\bin\Debug\net9.0\Microsoft.AspNetCore.Components.Authorization.dll
+C:\Users\zacha\source\ctrl-alt-elite-project\BudgetWise\bin\Debug\net9.0\Microsoft.AspNetCore.Metadata.dll
