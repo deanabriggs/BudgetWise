@@ -1,0 +1,30 @@
+<div class="card p-3 m-2">
+    <h3>Totals</h3>
+    <p><strong>Income:</strong> @TotalIncome.ToString("C")</p>
+    <p><strong>Expenses:</strong> @TotalExpenses.ToString("C")</p>
+    <p><strong>Balance:</strong> <span class="@(Balance >= 0 ? "text-success" : "text-danger")">@Balance.ToString("C")</span></p>
+</div>
+
+<div class="card p-3 m-2">
+    <h3>Breakdown by Category</h3>
+    <ul>
+        @foreach (var item in CategoryBreakdown) {
+            <li>@item.Key: @item.Value.ToString("C")</li>
+        }
+    </ul>
+</div>
+
+@code {
+    [Parameter] public decimal TotalIncome { get; set; } = 3000;
+    [Parameter] public decimal TotalExpenses { get; set; } = 1800;
+
+    private decimal Balance => TotalIncome - TotalExpenses;
+
+    private Dictionary<string, decimal> CategoryBreakdown = new () {
+        { "Food", 400 },
+        { "Housing", 900 },
+        { "Transportation", 200},
+        { "Entertainment", 150 },
+        { "Other", 150 }
+    };
+}
