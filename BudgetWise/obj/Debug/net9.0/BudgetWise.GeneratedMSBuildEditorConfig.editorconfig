@@ -44,12 +44,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIb21lLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/zacha/source/ctrl-alt-elite-project/BudgetWise/Components/Pages/Weather.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xXZWF0aGVyLnJhem9y
+[C:/Users/zacha/source/ctrl-alt-elite-project/BudgetWise/Components/Pages/Transactions.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUcmFuc2FjdGlvbnMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/zacha/source/ctrl-alt-elite-project/BudgetWise/Components/Routes.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xSb3V0ZXMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/zacha/source/ctrl-alt-elite-project/BudgetWise/Components/TransactionModal.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xUcmFuc2FjdGlvbk1vZGFsLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/zacha/source/ctrl-alt-elite-project/BudgetWise/Components/_Imports.razor]

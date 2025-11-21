@@ -300,8 +300,6 @@ C:\Users\zacha\source\ctrl-alt-elite-project\Budgetwise\obj\Debug\net9.0\BudgetW
 C:\Users\zacha\source\ctrl-alt-elite-project\Budgetwise\obj\Debug\net9.0\BudgetWise.csproj.CoreCompileInputs.cache
 C:\Users\zacha\source\ctrl-alt-elite-project\Budgetwise\obj\Debug\net9.0\BudgetWise.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\zacha\source\ctrl-alt-elite-project\Budgetwise\obj\Debug\net9.0\BudgetWise.MvcApplicationPartsAssemblyInfo.cache
-C:\Users\zacha\source\ctrl-alt-elite-project\Budgetwise\obj\Debug\net9.0\BudgetWise.RazorAssemblyInfo.cache
-C:\Users\zacha\source\ctrl-alt-elite-project\Budgetwise\obj\Debug\net9.0\BudgetWise.RazorAssemblyInfo.cs
 C:\Users\zacha\source\ctrl-alt-elite-project\Budgetwise\obj\Debug\net9.0\BudgetWise.sourcelink.json
 C:\Users\zacha\source\ctrl-alt-elite-project\Budgetwise\obj\Debug\net9.0\rjimswa.dswa.cache.json
 C:\Users\zacha\source\ctrl-alt-elite-project\Budgetwise\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
@@ -437,3 +435,5 @@ C:\Users\zacha\source\ctrl-alt-elite-project\BudgetWise\bin\Debug\net9.0\Microso
 C:\Users\zacha\source\ctrl-alt-elite-project\BudgetWise\bin\Debug\net9.0\Microsoft.AspNetCore.Components.dll
 C:\Users\zacha\source\ctrl-alt-elite-project\BudgetWise\bin\Debug\net9.0\Microsoft.AspNetCore.Components.Authorization.dll
 C:\Users\zacha\source\ctrl-alt-elite-project\BudgetWise\bin\Debug\net9.0\Microsoft.AspNetCore.Metadata.dll
+C:\Users\zacha\source\ctrl-alt-elite-project\BudgetWise\obj\Debug\net9.0\BudgetWise.RazorAssemblyInfo.cache
+C:\Users\zacha\source\ctrl-alt-elite-project\BudgetWise\obj\Debug\net9.0\BudgetWise.RazorAssemblyInfo.cs
