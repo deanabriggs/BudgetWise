@@ -1,0 +1,112 @@
+﻿@rendermode InteractiveServer
+@page "/transactions"
+@using BudgetWise.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using System.Transactions
+@using NuGet.Common
+@attribute [StreamRendering]
+@attribute [Authorize]
+
+<PageTitle>Transactions</PageTitle>
+
+@inject ApplicationDbContext Context
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<User> UserManager
+
+@if (user is not null)
+{
+    <h1>Hello, @user.FirstName</h1>
+    <button @onclick="() => ShowModal(null, TransactionModal.Mode.Create)">Add Transaction</button>
+
+    @if (ShowTransactionModal)
+    {
+        <TransactionModal @ref="ModalReference" Transaction="@ModalTransaction" OnChanged="@OnChanged" OnCanceled="@OnCanceled" Operation="@Operation" />
+    }
+
+    <ul class="transaction-list">
+    @foreach (var transaction in transactions)
+    {
+        <li style="display: flex; flex-direction: row; gap: 2em;">
+            <span>@transaction.Date </span>
+            <span>@transaction.Description </span>
+            <span>@transaction.Category </span>
+            <span>@transaction.Amount </span>
+            <button @onclick="() => ShowModal(transaction, TransactionModal.Mode.Update)">Update</button>
+            <button @onclick="() => ShowModal(transaction, TransactionModal.Mode.Delete)">Delete</button>
+        </li>   
+    }
+    </ul>
+}
+
+@code {
+    private User? user;
+    private List<UserTransaction> transactions = new List<UserTransaction>();
+    private UserTransaction? ModalTransaction { get; set; }
+    private TransactionModal? ModalReference { get; set; }
+    private TransactionModal.Mode Operation { get; set; }
+
+    private Dictionary<string, object> ComponentParameters { get; set; } = new Dictionary<string, object>();
+    private bool ShowTransactionModal = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Use AuthenticationStateProvider to get the current user if they're logged in
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        
+        // Check the user's authentication state and set it to the variable
+        if (authState.User.Identity is not null && authState.User.Identity.IsAuthenticated)
+        {
+            // Get the actual user through the UserManager
+            user = await UserManager.GetUserAsync(authState.User);
+
+            // Check if the user is not null since the variable is nullable
+            if (user is not null)
+                // Get all UserTransactions where the UserTransaction.UserId matches the logged in user's Id and make it a list
+                transactions = await Context.UserTransactions.Where(t => t.UserId == user.Id).ToListAsync();
+        }
+    }
+
+    private void ShowModal(UserTransaction? transaction, TransactionModal.Mode operation)
+    {
+        if (user is not null)
+        {
+            ShowTransactionModal = false;
+
+            if (transaction is null)
+                transaction = new UserTransaction
+                {
+                    Date = DateOnly.FromDateTime(DateTime.Now),
+                    User = user
+                };
+
+            ModalTransaction = transaction;
+            Operation = operation;
+
+            ShowTransactionModal = true;
+        }
+    }
+
+    private async void OnChanged()
+    {
+        ShowTransactionModal = false;
+        ModalTransaction = null;
+
+        // Check if the user is not null since the variable is nullable
+        if (user is not null)
+            // Update the transactions list to reflect the changes
+            transactions = await Context.UserTransactions.Where(t => t.UserId == user.Id).ToListAsync();
+    }
+
+    private async void OnCanceled()
+    {
+        // Check if the user is not null since the variable is nullable
+        if (user is not null)
+            // Update the transactions list to get rid of changes
+            transactions = await Context.UserTransactions.Where(t => t.UserId == user.Id).ToListAsync();
+
+        ShowTransactionModal = false;
+        ModalTransaction = null;
+    }
+}
