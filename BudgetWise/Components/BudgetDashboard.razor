@@ -1,17 +1,73 @@
-<div class="card p-3 m-2">
+<div class="transaction-table" style="margin-bottom: 25px;">
     <h3>Totals</h3>
-    <p><strong>Income:</strong> @TotalIncome.ToString("C")</p>
-    <p><strong>Expenses:</strong> @TotalExpenses.ToString("C")</p>
-    <p><strong>Balance:</strong> <span class="@(Balance >= 0 ? "text-success" : "text-danger")">@Balance.ToString("C")</span></p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Total Income</td>
+                    <td class="money-positive">$3,000.00</td>
+                </tr>
+                <tr>
+                    <td>Total Expenses</td>
+                    <td class="money-negative">$1,800.00</td>
+                </tr>
+                <tr>
+                    <td><strong>Balance</strong></td>
+                    <td><strong>$1,200.00</strong></td>
+                </tr>
+            </tbody>
+        </table>
 </div>
 
-<div class="card p-3 m-2">
-    <h3>Breakdown by Category</h3>
-    <ul>
-        @foreach (var item in CategoryBreakdown) {
-            <li>@item.Key: @item.Value.ToString("C")</li>
-        }
-    </ul>
+<div class="transaction-table budgeting-section" style="margin-bottom: 25px;">
+    <h3>Budgeting</h3>
+        <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Budgeted</th>
+                <th>Spent</th>
+                <th>Remaining</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Food</td>
+                <td>$400.00</td>
+                <td class="money-negative">$320.00</td>
+                <td class="money-positive">$80.00</td>
+            </tr>
+            <tr>
+                <td>Housing</td>
+                <td>$900.00</td>
+                <td class="money-negative">$900.00</td>
+                <td class="money-positive">$0.00</td>
+            </tr>
+            <tr>
+                <td>Transportation</td>
+                <td>$200.00</td>
+                <td class="money-negative">$150.00</td>
+                <td class="money-positive">$50.00</td>
+            </tr>
+            <tr>
+                <td>Entertainment</td>
+                <td>$150.00</td>
+                <td class="money-negative">$120.00</td>
+                <td class="money-positive">$30.00</td>
+            </tr>
+            <tr>
+                <td>Other</td>
+                <td>$150.00</td>
+                <td class="money-negative">$75.00</td>
+                <td class="money-positive">$75.00</td>
+            </tr>
+        </tbody>
+    </table>
 </div>
 
 @code {

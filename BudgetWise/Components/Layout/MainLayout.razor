@@ -1,15 +1,22 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
+<div class="layout-wrapper">
     <div class="sidebar">
-        <NavMenu />
+        <NavLink href="/" Match="NavLinkMatch.All">Dashboard</NavLink>
+        <NavLink href="/reports">Reports</NavLink>
+    </div>
+
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div class="logo">BudgetWise</div>
+
+        <div class="actions">
+            <button class="btn btn-outline-primary">Log In</button>
+            <span class="bi bi-person-circle" style="font-size:24px;"></span>
+        </div>
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
         <article class="content px-4">
             @Body
         </article>

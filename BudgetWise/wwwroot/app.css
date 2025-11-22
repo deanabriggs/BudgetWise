@@ -58,3 +58,101 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* Layout */
+
+.layout-wrapper {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: 60px 1fr;
+    grid-template-areas: 
+            "sidebar topbar"
+            "sidebar main";
+    height: 100vh;
+    font-family: Arial, Helvetica, sans-serif;
+
+}
+
+.sidebar {
+    grid-area: sidebar;
+    background: #1c2431;
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sidebar a {
+    color: white;
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 8px;
+    display: block;
+}
+
+.sidebar a.active, .sidebar a:hover {
+    background: #32405a;
+}
+
+.topbar {
+    grid-area: topbar;
+    background: #ffffff;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+.topbar .logo {
+    font-size: 1.4rem;
+    font-weight: center;
+    
+}
+
+
+/* ===== Table Styling ===== */
+
+.transaction-table {
+    width: 100%;
+    background: white;
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.transaction-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.transaction-table th, .transaction-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.transaction-table th {
+    text-align: left;
+    font-size: 1rem;
+    color: #666;
+}
+
+.money-positive {
+    color: green;
+    font-weight: bold;
+}
+
+.money-negative {
+    color: red;
+    font-weight: bold;
+}
+
+.budgeting-section h3 {
+    margin: 0 0 12px 5px;
+    font-size: 1.3rem;
+}
+
+.budgeting-section td:last-child {
+    font-weight: bold;
+}

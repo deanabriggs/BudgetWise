@@ -818,7 +818,6 @@ C:/Users/zacha/source/ctrl-alt-elite-project/BudgetWise/obj/Debug/net9.0/BudgetW
 /Users/camwoodward/BudgetWise/ctrl-alt-elite-project/BudgetWise/obj/Debug/net9.0/compressed/nezrqnk58p-{0}-muycvpuwrr-muycvpuwrr.gz
 /Users/camwoodward/BudgetWise/ctrl-alt-elite-project/BudgetWise/obj/Debug/net9.0/compressed/v0zgfp0y55-{0}-87fc7y1x7t-87fc7y1x7t.gz
 /Users/camwoodward/BudgetWise/ctrl-alt-elite-project/BudgetWise/obj/Debug/net9.0/compressed/yfc7ypekbg-{0}-mlv21k5csn-mlv21k5csn.gz
-/Users/camwoodward/BudgetWise/ctrl-alt-elite-project/BudgetWise/obj/Debug/net9.0/compressed/yyu6iqr4qn-{0}-w7mf952350-w7mf952350.gz
 /Users/camwoodward/BudgetWise/ctrl-alt-elite-project/BudgetWise/obj/Debug/net9.0/compressed/jq7mcysnxc-{0}-bqjiyaj88i-bqjiyaj88i.gz
 /Users/camwoodward/BudgetWise/ctrl-alt-elite-project/BudgetWise/obj/Debug/net9.0/compressed/5lrdubdqlm-{0}-c2jlpeoesf-c2jlpeoesf.gz
 /Users/camwoodward/BudgetWise/ctrl-alt-elite-project/BudgetWise/obj/Debug/net9.0/compressed/9gpvs8hn2x-{0}-erw9l3u2r3-erw9l3u2r3.gz
@@ -876,3 +875,4 @@ C:/Users/zacha/source/ctrl-alt-elite-project/BudgetWise/obj/Debug/net9.0/BudgetW
 /Users/camwoodward/BudgetWise/ctrl-alt-elite-project/BudgetWise/obj/Debug/net9.0/BudgetWise.pdb
 /Users/camwoodward/BudgetWise/ctrl-alt-elite-project/BudgetWise/obj/Debug/net9.0/BudgetWise.genruntimeconfig.cache
 /Users/camwoodward/BudgetWise/ctrl-alt-elite-project/BudgetWise/obj/Debug/net9.0/ref/BudgetWise.dll
+/Users/camwoodward/BudgetWise/ctrl-alt-elite-project/BudgetWise/obj/Debug/net9.0/compressed/yyu6iqr4qn-{0}-wzafwlq8dn-wzafwlq8dn.gz
