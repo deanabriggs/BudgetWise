@@ -1,10 +1,31 @@
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Identity;
 
-namespace BudgetWise.Data;
-
-public class User : IdentityUser
+namespace BudgetWise.Data
 {
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-    public virtual ICollection<UserTransaction> Transactions { get; set; } = new List<UserTransaction>();
+    // Our application user. Inherits from IdentityUser so we still get
+    // all the normal Identity fields (Email, PasswordHash, etc).
+    public class User : IdentityUser
+    {
+        // Optional names (these may already exist in your project)
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+
+        // Navigation properties so EF Core knows how things relate
+
+        // All expense transactions for this user
+        public List<UserTransaction> Transactions { get; set; } = new();
+
+        // All budgets for this user
+        public List<Budget> Budgets { get; set; } = new();
+
+        // All income entries for this user
+        public List<Income> Incomes { get; set; } = new();
+
+        // NEW: All debts (car loan, house, school, etc.)
+        public List<Debt> Debts { get; set; } = new();
+
+        // NEW: Savings goals (emergency fund, vacation, etc.)
+        public List<SavingsGoal> SavingsGoals { get; set; } = new();
+    }
 }

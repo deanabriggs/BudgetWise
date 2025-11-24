@@ -1,144 +1,61 @@
-@using BudgetWise.Data
-@using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Identity
-@using Microsoft.EntityFrameworkCore
-@using System.Transactions
-@attribute [StreamRendering]
-@attribute [Authorize]
+<EditForm Model="@Transaction" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
 
-@inject ApplicationDbContext Context
-@inject AuthenticationStateProvider AuthenticationStateProvider
-@inject UserManager<User> UserManager
-
-@if (true)
-{
-    <div>
-        @* Readonly for delete operations *@
-        @if (Operation == Mode.Delete)
-        {
-            <label>
-                <InputDate readonly @bind-Value="@Transaction.Date" />
-            </label>
-
-            <label>
-                <InputText readonly @bind-Value="@Transaction.Description" placeholder="Description" />
-            </label>
-
-            <label>
-                <InputText readonly @bind-Value="@Transaction.Category" placeholder="Category" />
-            </label>
-            
-            <label>
-                <InputNumber readonly @bind-Value="@Transaction.Amount" placeholder="Amount" />
-            </label>
-            <p>Are you sure you want to delete this transaction? This action cannot be undone.</p>
-        }
-        @* Editable fields for all other operations (create, update) *@
-        else
-        {
-            <label>
-                <InputDate @bind-Value="@Transaction.Date" />
-            </label>
-
-            <label>
-                <InputText @bind-Value="@Transaction.Description" placeholder="Description"  />
-            </label>
-
-            <label>
-                <InputText @bind-Value="@Transaction.Category" placeholder="Category" />
-            </label>
-            
-            <label>
-                <InputNumber @bind-Value="@Transaction.Amount" placeholder="5" />
-            </label>
-        }
-        <button @onclick="@CancelChanges">
-            Cancel
-        </button>
-        <button @onclick="@SaveChanges">
-            @if (Operation == Mode.Create)
-            {
-                saveButtonText = "Add";
-            }
-            else if (Operation == Mode.Update)
-            {
-                saveButtonText = "Update";
-            }
-            else if (Operation == Mode.Delete)
-            {
-                saveButtonText = "Delete";
-            }
-
-            @saveButtonText
-        </button>
+    <div class="mb-3">
+        <label>Type</label>
+        <select class="form-select" @bind="SelectedType">
+            <option value="Income">Income</option>
+            <option value="Expense">Expense</option>
+        </select>
     </div>
-}
+
+    <div class="mb-3">
+        <label>Amount</label>
+        <input class="form-control"
+               type="number"
+               step="0.01"
+               @bind-value="DisplayAmount" />
+    </div>
+
+    <div class="mb-3">
+        <label>Category</label>
+        <input class="form-control" @bind="Transaction.Category" />
+    </div>
+
+    <div class="mb-3">
+        <label>Description</label>
+        <input class="form-control" @bind="Transaction.Description" />
+    </div>
+
+    <div class="mb-3">
+        <label>Date</label>
+        <input class="form-control" type="date" @bind="Transaction.Date" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+</EditForm>
 
 @code {
-    public enum Mode
+    private string SelectedType { get; set; } = "Expense";
+
+    // Displayed amount (always positive)
+    private decimal DisplayAmount
     {
-        Create,
-        Update,
-        Delete,
-    }
-
-    [Parameter]
-    public required Mode Operation { get; set; }
-
-    [Parameter]
-    public required UserTransaction Transaction { get; set; }
-
-    [Parameter]
-    public required EventCallback OnChanged { get; set; }
-
-    [Parameter]
-    public required EventCallback OnCanceled { get; set; }
-
-    private string saveButtonText { get; set; } = string.Empty;
-
-    private User? user;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        
-        if (authState.User.Identity is not null && authState.User.Identity.IsAuthenticated)
+        get => Math.Abs(Transaction.Amount);
+        set
         {
-            user = await UserManager.GetUserAsync(authState.User);
+            if (SelectedType == "Income")
+                Transaction.Amount = Math.Abs(value);
+            else
+                Transaction.Amount = -Math.Abs(value);
         }
     }
 
-    private async void SaveChanges()
+    [Parameter] public UserTransaction Transaction { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+
+    private async Task HandleValidSubmit()
     {
-        if (user is not null)
-        {
-            Console.WriteLine(Operation);
-            switch (Operation)
-            {
-                case Mode.Create:
-                    Context.UserTransactions.Add(Transaction);
-                    break;
-                case Mode.Update:
-                    Context.UserTransactions.Update(Transaction);
-                    break;
-                case Mode.Delete:
-                    Context.UserTransactions.Remove(Transaction);
-                    break;
-                default:
-                    // No changes made so return without saving
-                    return;
-            }
-
-            Console.WriteLine("Updated");
-
-            await Context.SaveChangesAsync();
-            await OnChanged.InvokeAsync();
-        }
-    }
-
-    private async void CancelChanges()
-    {
-        Context.ChangeTracker.Clear();
-        await OnCanceled.InvokeAsync();
+        await OnSave.InvokeAsync();
     }
 }

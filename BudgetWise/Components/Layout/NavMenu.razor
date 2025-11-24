@@ -1,36 +1,69 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">BudgetWise</a>
+
+        <a class="navbar-brand" href="/">BudgetWise</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navMenu" aria-controls="navMenu"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/dashboard" Match="NavLinkMatch.All">
+                        Dashboard
+                    </NavLink>
+                </li>
+
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/transactions">
+                        Transactions
+                    </NavLink>
+                </li>
+
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/budgets">
+                        Budgets
+                    </NavLink>
+                </li>
+
+            </ul>
+
+            <AuthorizeView>
+                <Authorized>
+                    <form method="post"
+                          class="d-flex align-items-center"
+                          action="/Identity/Account/Logout?returnUrl=/">
+
+                        <button type="submit"
+                                class="btn btn-outline-light ms-2">
+                            Logout
+                        </button>
+                    </form>
+                </Authorized>
+
+                <NotAuthorized>
+                    <a href="/Identity/Account/Login" class="btn btn-outline-light">
+                        Login
+                    </a>
+                </NotAuthorized>
+            </AuthorizeView>
+
+        </div>
     </div>
-</div>
+</nav>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="transactions">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Transactions
-            </NavLink>
-        </div>
-    </nav>
-</div>
-
+<style>
+    /* Better focus visibility for accessibility (WCAG 2.1 AA) */
+    a:focus, button:focus {
+        outline: 3px solid #ffeb3b;
+        outline-offset: 3px;
+    }
+</style>

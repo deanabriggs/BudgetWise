@@ -1,5 +1,29 @@
+@using BudgetWise.Data
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+
+@inject ApplicationDbContext Context
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<User> UserManager
+
 <div class="transaction-table" style="margin-bottom: 25px;">
-    <h3>Totals</h3>
+    <h3>Totals (@CurrentMonthName @CurrentYear)</h3>
+
+    @if (IsLoading)
+    {
+        <p>Loading dashboard...</p>
+    }
+    else if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-danger">@ErrorMessage</div>
+    }
+    else if (user is null)
+    {
+        <p>Please log in to see your dashboard.</p>
+    }
+    else
+    {
         <table>
             <thead>
                 <tr>
@@ -10,77 +34,183 @@
             <tbody>
                 <tr>
                     <td>Total Income</td>
-                    <td class="money-positive">$3,000.00</td>
+                    <td class="money-positive">@TotalIncome.ToString("C")</td>
                 </tr>
                 <tr>
                     <td>Total Expenses</td>
-                    <td class="money-negative">$1,800.00</td>
+                    <td class="money-negative">@TotalExpenses.ToString("C")</td>
                 </tr>
                 <tr>
                     <td><strong>Balance</strong></td>
-                    <td><strong>$1,200.00</strong></td>
+                    <td>
+                        <strong class="@(Balance >= 0 ? "money-positive" : "money-negative")">
+                            @Balance.ToString("C")
+                        </strong>
+                    </td>
                 </tr>
             </tbody>
         </table>
+    }
 </div>
 
 <div class="transaction-table budgeting-section" style="margin-bottom: 25px;">
-    <h3>Budgeting</h3>
+    <h3>Budgeting (@CurrentMonthName @CurrentYear)</h3>
+
+    @if (IsLoading)
+    {
+        <p>Loading budgets...</p>
+    }
+    else if (user is null)
+    {
+    }
+    else if (BudgetSummaries.Count == 0)
+    {
+        <p>
+            No budgets found for this month.
+            Create some budgets on the <a href="/budgets">Budgets page</a>.
+        </p>
+    }
+    else
+    {
         <table>
-        <thead>
-            <tr>
-                <th>Category</th>
-                <th>Budgeted</th>
-                <th>Spent</th>
-                <th>Remaining</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Food</td>
-                <td>$400.00</td>
-                <td class="money-negative">$320.00</td>
-                <td class="money-positive">$80.00</td>
-            </tr>
-            <tr>
-                <td>Housing</td>
-                <td>$900.00</td>
-                <td class="money-negative">$900.00</td>
-                <td class="money-positive">$0.00</td>
-            </tr>
-            <tr>
-                <td>Transportation</td>
-                <td>$200.00</td>
-                <td class="money-negative">$150.00</td>
-                <td class="money-positive">$50.00</td>
-            </tr>
-            <tr>
-                <td>Entertainment</td>
-                <td>$150.00</td>
-                <td class="money-negative">$120.00</td>
-                <td class="money-positive">$30.00</td>
-            </tr>
-            <tr>
-                <td>Other</td>
-                <td>$150.00</td>
-                <td class="money-negative">$75.00</td>
-                <td class="money-positive">$75.00</td>
-            </tr>
-        </tbody>
-    </table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Budgeted</th>
+                    <th>Spent</th>
+                    <th>Remaining</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var b in BudgetSummaries)
+                {
+                    <tr>
+                        <td>@b.Category</td>
+                        <td>@b.Budgeted.ToString("C")</td>
+                        <td class="money-negative">@b.Spent.ToString("C")</td>
+                        <td class="@(b.Remaining >= 0 ? "money-positive" : "money-negative")">
+                            @b.Remaining.ToString("C")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 </div>
 
 @code {
-    [Parameter] public decimal TotalIncome { get; set; } = 3000;
-    [Parameter] public decimal TotalExpenses { get; set; } = 1800;
+    private User? user;
 
-    private decimal Balance => TotalIncome - TotalExpenses;
+    private bool IsLoading { get; set; } = true;
+    private string? ErrorMessage { get; set; }
 
-    private Dictionary<string, decimal> CategoryBreakdown = new () {
-        { "Food", 400 },
-        { "Housing", 900 },
-        { "Transportation", 200},
-        { "Entertainment", 150 },
-        { "Other", 150 }
-    };
+    private int CurrentMonth { get; set; }
+    private int CurrentYear { get; set; }
+    private string CurrentMonthName => new DateTime(CurrentYear, CurrentMonth, 1).ToString("MMMM");
+
+    private decimal TotalIncome { get; set; }
+    private decimal TotalExpensesRaw { get; set; }
+    private decimal TotalExpenses => Math.Abs(TotalExpensesRaw);
+    private decimal Balance => TotalIncome + TotalExpensesRaw;
+
+    private List<BudgetSummary> BudgetSummaries { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var today = DateTime.Today;
+            CurrentMonth = today.Month;
+            CurrentYear = today.Year;
+
+            var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+            if (!auth.User.Identity?.IsAuthenticated ?? false)
+            {
+                user = null;
+                IsLoading = false;
+                return;
+            }
+
+            user = await UserManager.GetUserAsync(auth.User);
+
+            if (user == null)
+            {
+                ErrorMessage = "Unable to load the user.";
+                return;
+            }
+
+            await LoadDashboardAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task LoadDashboardAsync()
+    {
+        if (user == null) return;
+
+        // INCOME
+        TotalIncome = await Context.Incomes
+            .Where(i => i.UserId == user.Id &&
+                        i.Date.Month == CurrentMonth &&
+                        i.Date.Year == CurrentYear)
+            .SumAsync(i => i.Amount);
+
+        // EXPENSES (negative)
+        TotalExpensesRaw = await Context.UserTransactions
+            .Where(t => t.UserId == user.Id &&
+                        t.Amount < 0 &&
+                        t.Date.Month == CurrentMonth &&
+                        t.Date.Year == CurrentYear)
+            .SumAsync(t => t.Amount);
+
+        // BUDGETS FOR THIS MONTH
+        var budgets = await Context.Budgets
+            .Where(b => b.UserId == user.Id &&
+                        b.Month == CurrentMonth &&
+                        b.Year == CurrentYear)
+            .ToListAsync();
+
+        var transactions = await Context.UserTransactions
+            .Where(t => t.UserId == user.Id &&
+                        t.Date.Month == CurrentMonth &&
+                        t.Date.Year == CurrentYear)
+            .ToListAsync();
+
+        BudgetSummaries = budgets
+            .Select(b =>
+            {
+                var rawSpent = transactions
+                    .Where(t => t.Category == b.Category && t.Amount < 0)
+                    .Sum(t => t.Amount);
+
+                var spent = Math.Abs(rawSpent);
+                var remaining = b.MonthlyLimit - spent;
+
+                return new BudgetSummary
+                {
+                    Category = b.Category,
+                    Budgeted = b.MonthlyLimit,
+                    Spent = spent,
+                    Remaining = remaining
+                };
+            })
+            .OrderBy(b => b.Category)
+            .ToList();
+    }
+
+    private class BudgetSummary
+    {
+        public string Category { get; set; } = string.Empty;
+        public decimal Budgeted { get; set; }
+        public decimal Spent { get; set; }
+        public decimal Remaining { get; set; }
+    }
 }

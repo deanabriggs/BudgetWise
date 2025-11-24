@@ -1,0 +1,264 @@
+@page "/income"
+@using BudgetWise.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext Context
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<User> UserManager
+@attribute [Authorize]
+
+<PageTitle>Income</PageTitle>
+
+<h1 class="mb-4">Income</h1>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
+@if (!string.IsNullOrEmpty(SuccessMessage))
+{
+    <div class="alert alert-success">@SuccessMessage</div>
+}
+
+@if (user is null)
+{
+    <p>You must be logged in to manage income.</p>
+}
+else
+{
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>Your Income</strong>
+            <button class="btn btn-sm btn-outline-primary" @onclick="OpenAddModal">
+                Add Income
+            </button>
+        </div>
+
+        <div class="card-body p-0">
+            @if (incomeList.Count == 0)
+            {
+                <p class="m-3">No income entries found.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th class="text-end">Amount</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var i in incomeList)
+                            {
+                                <tr>
+                                    <td>@i.Date.ToString("yyyy-MM-dd")</td>
+                                    <td>@i.Description</td>
+                                    <td class="text-end text-success">@i.Amount.ToString("C")</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="@(() => OpenEditModal(i))">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="@(() => OpenDeleteModal(i))">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Add Income Modal -->
+    <SimpleModal IsOpen="@IsAddModalOpen" Title="Add Income" OnClose="CloseAddModal">
+        <EditForm Model="@newIncome" OnValidSubmit="@SaveNewIncome">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label>Date</label>
+                <InputDate class="form-control" @bind-Value="newIncome.Date" />
+            </div>
+
+            <div class="mb-3">
+                <label>Description</label>
+                <InputText class="form-control" @bind-Value="newIncome.Description" />
+            </div>
+
+            <div class="mb-3">
+                <label>Amount</label>
+                <InputNumber class="form-control" @bind-Value="newIncome.Amount" />
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-secondary me-2" @onclick="CloseAddModal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </EditForm>
+    </SimpleModal>
+
+    <!-- Edit Income Modal -->
+    <SimpleModal IsOpen="@IsEditModalOpen" Title="Edit Income" OnClose="CloseEditModal">
+        <EditForm Model="@editIncome" OnValidSubmit="@SaveEditedIncome">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label>Date</label>
+                <InputDate class="form-control" @bind-Value="editIncome.Date" />
+            </div>
+
+            <div class="mb-3">
+                <label>Description</label>
+                <InputText class="form-control" @bind-Value="editIncome.Description" />
+            </div>
+
+            <div class="mb-3">
+                <label>Amount</label>
+                <InputNumber class="form-control" @bind-Value="editIncome.Amount" />
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-secondary me-2" @onclick="CloseEditModal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </EditForm>
+    </SimpleModal>
+
+    <!-- Delete Modal -->
+    <SimpleModal IsOpen="@IsDeleteModalOpen" Title="Delete Income" OnClose="CloseDeleteModal">
+        @if (deleteTarget is not null)
+        {
+            <p>Are you sure you want to delete this income?</p>
+            <ul>
+                <li><strong>Date:</strong> @deleteTarget.Date.ToString("yyyy-MM-dd")</li>
+                <li><strong>Description:</strong> @deleteTarget.Description</li>
+                <li><strong>Amount:</strong> @deleteTarget.Amount.ToString("C")</li>
+            </ul>
+
+            <div class="d-flex justify-content-end">
+                <button class="btn btn-secondary me-2" @onclick="CloseDeleteModal">Cancel</button>
+                <button class="btn btn-danger" @onclick="DeleteIncome">Delete</button>
+            </div>
+        }
+    </SimpleModal>
+}
+
+@code {
+    private User? user;
+    private List<Data.Income> incomeList = new();
+
+    private Data.Income newIncome = new();
+    private Data.Income editIncome = new();
+    private Data.Income? deleteTarget;
+
+    private bool IsAddModalOpen = false;
+    private bool IsEditModalOpen = false;
+    private bool IsDeleteModalOpen = false;
+
+    private string? ErrorMessage;
+    private string? SuccessMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var authUser = authState.User;
+
+        if (authUser.Identity?.IsAuthenticated ?? false)
+            user = await UserManager.GetUserAsync(authUser);
+
+        if (user is null)
+        {
+            ErrorMessage = "User not found. Please log in again.";
+            return;
+        }
+
+        await LoadIncomeAsync();
+    }
+
+    private async Task LoadIncomeAsync()
+    {
+        if (user is null) return;
+
+        incomeList = await Context.Incomes
+            .Where(i => i.UserId == user.Id)
+            .OrderByDescending(i => i.Date)
+            .ToListAsync();
+    }
+
+    private void OpenAddModal()
+    {
+        newIncome = new Data.Income
+        {
+            Date = DateTime.Today,
+            Description = "",
+            Amount = 0,
+            UserId = user?.Id
+        };
+        IsAddModalOpen = true;
+    }
+
+    private void CloseAddModal() => IsAddModalOpen = false;
+
+    private async Task SaveNewIncome()
+    {
+        if (user is null) return;
+
+        newIncome.UserId = user.Id;
+        Context.Incomes.Add(newIncome);
+        await Context.SaveChangesAsync();
+
+        SuccessMessage = "Income added.";
+        IsAddModalOpen = false;
+
+        await LoadIncomeAsync();
+    }
+
+    private void OpenEditModal(Data.Income i)
+    {
+        editIncome = new Data.Income
+        {
+            Id = i.Id,
+            UserId = i.UserId,
+            Date = i.Date,
+            Description = i.Description,
+            Amount = i.Amount
+        };
+        IsEditModalOpen = true;
+    }
+
+    private void CloseEditModal() => IsEditModalOpen = false;
+
+    private async Task SaveEditedIncome()
+    {
+        Context.Incomes.Update(editIncome);
+        await Context.SaveChangesAsync();
+        SuccessMessage = "Income updated.";
+        IsEditModalOpen = false;
+
+        await LoadIncomeAsync();
+    }
+
+    private void OpenDeleteModal(Data.Income i)
+    {
+        deleteTarget = i;
+        IsDeleteModalOpen = true;
+    }
+
+    private void CloseDeleteModal() => IsDeleteModalOpen = false;
+
+    private async Task DeleteIncome()
+    {
+        if (deleteTarget != null)
+        {
+            Context.Incomes.Remove(deleteTarget);
+            await Context.SaveChangesAsync();
+        }
+        IsDeleteModalOpen = false;
+        await LoadIncomeAsync();
+    }
+}

@@ -1,0 +1,207 @@
+@page "/debts"
+@using BudgetWise.Data
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+@inject ApplicationDbContext Context
+@inject UserManager<User> UserManager
+@inject AuthenticationStateProvider AuthProvider
+
+<h3 class="mb-3">Debts</h3>
+
+@if (IsLoading)
+{
+    <p>Loading...</p>
+}
+else if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+else
+{
+    <button class="btn btn-primary mb-3" @onclick="CreateDebt">Add New Debt</button>
+
+    @if (IsEditing)
+    {
+        <div class="card mb-4">
+            <div class="card-header">@((EditingDebt.Id == 0 ? "Add Debt" : "Edit Debt"))</div>
+            <div class="card-body">
+                <EditForm Model="@EditingDebt" OnValidSubmit="@SaveDebt">
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-2">
+                        <label>Name</label>
+                        <InputText class="form-control" @bind-Value="EditingDebt.Name" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label>Original Amount ($)</label>
+                        <InputNumber class="form-control" @bind-Value="EditingDebt.OriginalAmount" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label>Current Balance ($)</label>
+                        <InputNumber class="form-control" @bind-Value="EditingDebt.CurrentBalance" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label>Monthly Payment ($)</label>
+                        <InputNumber class="form-control" @bind-Value="EditingDebt.MonthlyPayment" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label>Interest Rate (%)</label>
+                        <InputNumber class="form-control" @bind-Value="EditingDebt.InterestRate" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label>Start Date</label>
+                        <InputDate class="form-control" @bind-Value="EditingDebt.StartDate" />
+                    </div>
+
+                    <button class="btn btn-success" type="submit">Save</button>
+                    <button class="btn btn-secondary ms-2" @onclick="CancelEdit">Cancel</button>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-header"><strong>Your Debts</strong></div>
+        <div class="card-body">
+
+            @if (UserDebts.Count == 0)
+            {
+                <p>No debts added yet.</p>
+            }
+            else
+            {
+                @foreach (var d in UserDebts)
+                {
+                    <div class="mb-3 p-2 border rounded">
+                        <div class="d-flex justify-content-between">
+                            <strong>@d.Name</strong>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => EditDebt(d)">Edit</button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteDebt(d)">Delete</button>
+                            </div>
+                        </div>
+
+                        <div class="small text-muted">
+                            @d.CurrentBalance.ToString("C") remaining  
+                            (Started @d.StartDate?.ToString("yyyy-MM-dd"))
+                        </div>
+
+                        <div class="mb-1">
+                            Monthly Payment: <strong>@d.MonthlyPayment.ToString("C")</strong>
+                        </div>
+
+                        <div class="progress">
+                            <div class="progress-bar bg-warning"
+                                 style="width:@d.ProgressPercent.ToString("0")%">
+                                @d.ProgressPercent.ToString("0")%
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private User? user;
+    private bool IsLoading = true;
+    private string? ErrorMessage;
+
+    // FIXED: renamed from Debts → UserDebts
+    private List<Debt> UserDebts = new();
+
+    private bool IsEditing = false;
+    private Debt EditingDebt = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var auth = await AuthProvider.GetAuthenticationStateAsync();
+            user = await UserManager.GetUserAsync(auth.User);
+
+            if (user == null)
+            {
+                ErrorMessage = "User not found.";
+                return;
+            }
+
+            await LoadDebts();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task LoadDebts()
+    {
+        if (user == null) return;
+
+        UserDebts = await Context.Debts
+            .Where(d => d.UserId == user.Id)
+            .OrderBy(d => d.Name)
+            .ToListAsync();
+    }
+
+    private void CreateDebt()
+    {
+        EditingDebt = new Debt
+        {
+            UserId = user!.Id,
+            StartDate = DateTime.Today
+        };
+        IsEditing = true;
+    }
+
+    private void EditDebt(Debt debt)
+    {
+        EditingDebt = new Debt
+        {
+            Id = debt.Id,
+            UserId = debt.UserId,
+            Name = debt.Name,
+            OriginalAmount = debt.OriginalAmount,
+            CurrentBalance = debt.CurrentBalance,
+            MonthlyPayment = debt.MonthlyPayment,
+            InterestRate = debt.InterestRate,
+            StartDate = debt.StartDate
+        };
+        IsEditing = true;
+    }
+
+    private async Task SaveDebt()
+    {
+        if (EditingDebt.Id == 0)
+            Context.Debts.Add(EditingDebt);
+        else
+            Context.Debts.Update(EditingDebt);
+
+        await Context.SaveChangesAsync();
+        await LoadDebts();
+        IsEditing = false;
+    }
+
+    private void CancelEdit() => IsEditing = false;
+
+    private async Task DeleteDebt(Debt debt)
+    {
+        Context.Debts.Remove(debt);
+        await Context.SaveChangesAsync();
+        await LoadDebts();
+    }
+}

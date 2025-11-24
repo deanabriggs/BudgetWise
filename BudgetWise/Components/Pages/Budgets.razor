@@ -1,0 +1,323 @@
+@page "/budgets"
+@using BudgetWise.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@attribute [StreamRendering]
+@attribute [Authorize]
+
+<PageTitle>Budgets</PageTitle>
+
+@inject ApplicationDbContext Context
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<User> UserManager
+
+<h1 class="mb-4">Budgets</h1>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">@ErrorMessage</div>
+}
+
+@if (!string.IsNullOrEmpty(SuccessMessage))
+{
+    <div class="alert alert-success" role="status">@SuccessMessage</div>
+}
+
+@if (user is null)
+{
+    <p>You must be logged in to manage budgets.</p>
+}
+else
+{
+    <!-- BUDGET FORM -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>@FormTitle</strong>
+        </div>
+        <div class="card-body">
+            <EditForm Model="@editBudget" OnValidSubmit="@SaveBudget">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="mb-3">
+                    <label class="form-label" for="categoryInput">Category</label>
+                    <InputText id="categoryInput"
+                               class="form-control"
+                               @bind-Value="editBudget.Category" />
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label" for="monthSelect">Month</label>
+                        <InputSelect id="monthSelect"
+                                     class="form-select"
+                                     @bind-Value="editBudget.Month">
+                            <option value="">Select month</option>
+                            @foreach (var month in Months)
+                            {
+                                <option value="@month.Value">@month.Key</option>
+                            }
+                        </InputSelect>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label" for="yearInput">Year</label>
+                        <InputNumber id="yearInput"
+                                     class="form-control"
+                                     @bind-Value="editBudget.Year" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label" for="limitInput">Monthly Limit ($)</label>
+                        <InputNumber id="limitInput"
+                                     class="form-control"
+                                     @bind-Value="editBudget.MonthlyLimit" />
+                    </div>
+                </div>
+
+                <button class="btn btn-primary"
+                        type="submit"
+                        disabled="@IsBusy">
+                    @(IsEditing ? "Update Budget" : "Add Budget")
+                </button>
+
+                @if (IsEditing)
+                {
+                    <button type="button"
+                            class="btn btn-secondary ms-2"
+                            @onclick="CancelEdit"
+                            disabled="@IsBusy">
+                        Cancel
+                    </button>
+                }
+            </EditForm>
+        </div>
+    </div>
+
+    <!-- BUDGET LIST -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>Your Budgets</strong>
+            <button class="btn btn-sm btn-outline-primary"
+                    @onclick="StartCreate">
+                Add New Budget
+            </button>
+        </div>
+
+        <div class="card-body p-0">
+            @if (budgets.Count == 0)
+            {
+                <p class="m-3">
+                    No budgets yet. Add one above to start tracking your spending limits.
+                </p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category</th>
+                                <th>Month</th>
+                                <th>Year</th>
+                                <th class="text-end">Monthly Limit</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var b in budgets)
+                            {
+                                <tr>
+                                    <td>@b.Category</td>
+                                    <td>@MonthName(b.Month)</td>
+                                    <td>@b.Year</td>
+                                    <td class="text-end">
+                                        @b.MonthlyLimit.ToString("C")
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-2"
+                                                @onclick="() => StartEdit(b)">
+                                            Edit
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                @onclick="() => ConfirmDelete(b)">
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private User? user;
+    private List<Budget> budgets = new();
+    private Budget editBudget = new();
+
+    private string FormTitle { get; set; } = "Add New Budget";
+    private bool IsEditing { get; set; }
+    private bool IsBusy { get; set; }
+    private string? ErrorMessage { get; set; }
+    private string? SuccessMessage { get; set; }
+
+    private readonly Dictionary<string, int> Months = new()
+    {
+        { "January", 1 }, { "February", 2 }, { "March", 3 }, { "April", 4 },
+        { "May", 5 }, { "June", 6 }, { "July", 7 }, { "August", 8 },
+        { "September", 9 }, { "October", 10 }, { "November", 11 }, { "December", 12 },
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            user = await UserManager.GetUserAsync(authState.User);
+        }
+
+        if (user is null)
+        {
+            ErrorMessage = "Unable to load user.";
+            return;
+        }
+
+        await LoadBudgetsAsync();
+        StartCreate();
+    }
+
+    private async Task LoadBudgetsAsync()
+    {
+        budgets = await Context.Budgets
+            .Where(b => b.UserId == user!.Id)
+            .OrderByDescending(b => b.Year)
+            .ThenByDescending(b => b.Month)
+            .ThenBy(b => b.Category)
+            .ToListAsync();
+    }
+
+    private void StartCreate()
+    {
+        IsEditing = false;
+        FormTitle = "Add New Budget";
+        SuccessMessage = ErrorMessage = null;
+
+        var now = DateTime.Now;
+
+        editBudget = new Budget
+        {
+            UserId = user!.Id,
+            Category = "",
+            Month = now.Month,
+            Year = now.Year,
+            MonthlyLimit = 0
+        };
+    }
+
+    private void StartEdit(Budget b)
+    {
+        IsEditing = true;
+        FormTitle = $"Edit Budget – {b.Category}";
+        SuccessMessage = ErrorMessage = null;
+
+        editBudget = new Budget
+        {
+            Id = b.Id,
+            UserId = b.UserId,
+            Category = b.Category,
+            Month = b.Month,
+            Year = b.Year,
+            MonthlyLimit = b.MonthlyLimit
+        };
+    }
+
+    private async Task SaveBudget()
+    {
+        if (user is null)
+        {
+            ErrorMessage = "You must be logged in to save a budget.";
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        try
+        {
+            // Ensure we always save with the current user
+            editBudget.UserId = user.Id;
+
+            if (editBudget.Id == 0)
+            {
+                Context.Budgets.Add(editBudget);
+            }
+            else
+            {
+                Context.Budgets.Update(editBudget);
+            }
+
+            await Context.SaveChangesAsync();
+            await LoadBudgetsAsync();
+
+            SuccessMessage = IsEditing ? "Budget updated!" : "Budget added!";
+            StartCreate();
+        }
+        catch (DbUpdateException)
+        {
+            // Most likely the unique index: UserId + Category + Month + Year
+            ErrorMessage = "A budget for this category and month already exists.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error saving: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void CancelEdit()
+    {
+        StartCreate();
+    }
+
+    private async Task ConfirmDelete(Budget b)
+    {
+        if (user is null)
+        {
+            ErrorMessage = "You must be logged in to delete a budget.";
+            return;
+        }
+
+        try
+        {
+            Context.Budgets.Remove(b);
+            await Context.SaveChangesAsync();
+
+            SuccessMessage = "Budget deleted.";
+            await LoadBudgetsAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error deleting: {ex.Message}";
+        }
+    }
+
+    private string MonthName(int month)
+    {
+        if (month < 1 || month > 12)
+        {
+            return "Unknown";
+        }
+
+        return new DateTime(2000, month, 1).ToString("MMMM");
+    }
+}

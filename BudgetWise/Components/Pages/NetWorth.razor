@@ -1,0 +1,142 @@
+@page "/networth"
+@using BudgetWise.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Authorization
+@inject ApplicationDbContext Context
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<User> UserManager
+@attribute [Authorize]
+
+<PageTitle>Net Worth</PageTitle>
+
+<h1 class="mb-4">Net Worth</h1>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+else if (user is null)
+{
+    <p>You must be logged in to view your net worth.</p>
+}
+else
+{
+    <div class="row g-3 mb-4">
+
+        <!-- Income -->
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Total Income</h6>
+                    <h4 class="text-success">@TotalIncome.ToString("C")</h4>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expenses -->
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Total Expenses</h6>
+                    <h4 class="text-danger">@TotalExpenses.ToString("C")</h4>
+                </div>
+            </div>
+        </div>
+
+        <!-- Savings -->
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Savings</h6>
+                    <h4 class="text-primary">@TotalSavings.ToString("C")</h4>
+                </div>
+            </div>
+        </div>
+
+        <!-- Debts -->
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Debts</h6>
+                    <h4 class="text-warning">@TotalDebts.ToString("C")</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Net Worth -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5>Your Net Worth</h5>
+            <h2 class="@((TotalNetWorth >= 0 ? "text-success" : "text-danger"))">
+                @TotalNetWorth.ToString("C")
+            </h2>
+            <p class="text-muted mb-0">
+                Net Worth = (Income - Expenses) + Savings - Debts
+            </p>
+        </div>
+    </div>
+}
+
+@code {
+    private User? user;
+    private string? ErrorMessage;
+
+    public decimal TotalIncome { get; set; }
+    public decimal TotalExpenses { get; set; }
+    public decimal TotalSavings { get; set; }
+    public decimal TotalDebts { get; set; }
+
+    public decimal TotalNetWorth => (TotalIncome - TotalExpenses) + TotalSavings - TotalDebts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var authUser = authState.User;
+
+        if (authUser.Identity?.IsAuthenticated ?? false)
+        {
+            user = await UserManager.GetUserAsync(authUser);
+        }
+
+        if (user == null)
+        {
+            ErrorMessage = "User not found. Please log in again.";
+            return;
+        }
+
+        await LoadTotalsAsync();
+    }
+
+    private async Task LoadTotalsAsync()
+    {
+        if (user == null) return;
+
+        // ✔ SQLite-Safe SUM (done in memory)
+        TotalIncome = (await Context.Incomes
+            .Where(i => i.UserId == user.Id)
+            .Select(i => i.Amount)
+            .ToListAsync())
+            .Sum();
+
+        TotalExpenses = (await Context.UserTransactions
+            .Where(t => t.UserId == user.Id)
+            .Select(t => t.Amount)
+            .ToListAsync())
+            .Sum();
+
+        TotalSavings = (await Context.SavingsGoals
+            .Where(g => g.UserId == user.Id)
+            .Select(g => g.CurrentAmount)
+            .ToListAsync())
+            .Sum();
+
+        TotalDebts = (await Context.Debts
+            .Where(d => d.UserId == user.Id)
+            .Select(d => d.CurrentBalance)
+            .ToListAsync())
+            .Sum();
+    }
+}

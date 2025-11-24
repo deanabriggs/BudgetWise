@@ -1,30 +1,28 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="layout-wrapper">
-    <div class="sidebar">
-        <NavLink href="/" Match="NavLinkMatch.All">Dashboard</NavLink>
-        <NavLink href="/reports">Reports</NavLink>
-    </div>
+<div class="page">
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm mb-3 px-3">
+            <a class="navbar-brand fw-bold" href="/">BudgetWise</a>
 
-    <!-- Top Bar -->
-    <div class="topbar">
-        <div class="logo">BudgetWise</div>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-        <div class="actions">
-            <button class="btn btn-outline-primary">Log In</button>
-            <span class="bi bi-person-circle" style="font-size:24px;"></span>
-        </div>
-    </div>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="/income">Income</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/transactions">Transactions</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/budgets">Budgets</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/debts">Debts</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/savings-goals">Savings</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/networth">Net Worth</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
 
-    <main>
-        <article class="content px-4">
-            @Body
-        </article>
+    <main class="container">
+        @Body
     </main>
-</div>
-
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
 </div>

@@ -1,0 +1,76 @@
+@namespace BudgetWise.Components.Shared
+
+@* File: Components/Shared/SimpleModal.razor
+   A simple, reusable, accessible modal dialog.
+
+   Usage example:
+
+   <SimpleModal IsOpen="@IsAddOpen"
+                Title="Add Transaction"
+                OnClose="CloseAdd">
+       <EditForm Model="@newTransaction" OnValidSubmit="@SaveNewTransaction">
+           <!-- form fields here -->
+       </EditForm>
+   </SimpleModal>
+*@
+
+@if (IsOpen)
+{
+    <!-- Backdrop -->
+    <div class="modal-backdrop fade show"></div>
+
+    <!-- Modal dialog -->
+    <div class="modal d-block"
+         tabindex="-1"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="@_titleId">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="@_titleId">@Title</h5>
+                    <button type="button"
+                            class="btn-close"
+                            aria-label="Close"
+                            @onclick="Close">
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    @ChildContent
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // Whether the modal is visible.
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    // Title displayed in the modal header.
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    // Content of the modal (form, message, etc).
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    // Called when the user clicks the close button.
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    // Unique id used for aria-labelledby.
+    private readonly string _titleId = $"modal_{Guid.NewGuid():N}";
+
+    private async Task Close()
+    {
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+}

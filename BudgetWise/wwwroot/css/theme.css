@@ -1,0 +1,55 @@
+/* File: wwwroot/css/theme.css */
+
+/* Light mode (default) */
+body {
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+/* Dark mode enabled */
+body.dark-mode {
+    background-color: #121212 !important;
+    color: #e2e2e2 !important;
+}
+
+/* Sidebar */
+body.dark-mode .sidebar {
+    background-color: #1f1f1f !important;
+    border-color: #333 !important;
+}
+body.dark-mode .sidebar .nav-link {
+    color: #ccc !important;
+}
+body.dark-mode .sidebar .nav-link.active {
+    background-color: #0d6efd !important;
+}
+
+/* Topbar */
+body.dark-mode .topbar {
+    background-color: #1f1f1f !important;
+    border-color: #333 !important;
+}
+
+/* Cards */
+body.dark-mode .card {
+    background-color: #1e1e1e !important;
+    border-color: #333 !important;
+}
+body.dark-mode .card-body {
+    color: #ddd !important;
+}
+
+/* Tables */
+body.dark-mode table {
+    color: #ddd !important;
+}
+body.dark-mode .table-light {
+    background-color: #2a2a2a !important;
+    color: #ccc !important;
+}
+
+/* Buttons */
+body.dark-mode .btn-outline-secondary {
+    color: #ccc !important;
+    border-color: #666 !important;
+}
