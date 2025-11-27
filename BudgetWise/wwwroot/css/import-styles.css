@@ -1,0 +1,53 @@
+#import-table {
+    padding: 1em;
+    width: 100%;
+    position: relative;
+}
+
+#import-table td,
+#import-table th {
+    padding: 0.5em;
+    border: 1px solid rgb(165, 165, 165);
+}
+
+#import-table th {
+    position: sticky;
+    top: 0;
+}
+
+#import-table th:first-child,
+#import-table td:first-child {
+    border-left: none;
+}
+
+#import-table th:last-child,
+#import-table td:last-child {
+    border-right: none;
+}
+
+#import-table tr:first-child th,
+#import-table tr:first-child td {
+    border-top: none;
+}
+
+#import-table tr:last-child tr,
+#import-table tr:last-child td {
+    border-bottom: none;
+}
+
+@keyframes expand {
+    0% {
+        height: 0px;
+    }
+    100% {
+        height: 50vh;
+    }
+}
+
+.import-container {
+    height: 50vh;
+    overflow: scroll;
+    border: 1px solid rgb(165, 165, 165);
+    border-radius: var(--bs-modal-border-radius);
+    animation: expand 1s ease-out;
+}

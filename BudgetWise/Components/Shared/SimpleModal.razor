@@ -1,4 +1,5 @@
 @namespace BudgetWise.Components.Shared
+@attribute [StreamRendering]
 
 @* File: Components/Shared/SimpleModal.razor
    A simple, reusable, accessible modal dialog.
@@ -25,7 +26,7 @@
          role="dialog"
          aria-modal="true"
          aria-labelledby="@_titleId">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-dialog @((SizeClass is not null) ? $"modal-{SizeClass}" : "") modal-dialog-centered" role="document">
             <div class="modal-content">
 
                 <div class="modal-header">
@@ -62,6 +63,10 @@
     // Called when the user clicks the close button.
     [Parameter]
     public EventCallback OnClose { get; set; }
+
+    // The size of the modal
+    [Parameter]
+    public string? SizeClass { get; set; }
 
     // Unique id used for aria-labelledby.
     private readonly string _titleId = $"modal_{Guid.NewGuid():N}";
