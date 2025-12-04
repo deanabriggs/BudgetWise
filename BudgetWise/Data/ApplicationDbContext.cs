@@ -82,10 +82,9 @@ namespace BudgetWise.Data
                 .HasForeignKey(c => c.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Prevent duplicate category names for the same user
-            builder.Entity<Category>()
-                .HasIndex(c => new { c.UserId, c.Name })
-                .IsUnique();
+            // Note: Uniqueness is enforced in application code
+            // For default categories (UserId = null): unique by Name
+            // For user categories: unique by UserId + Name
         }
     }
 }
