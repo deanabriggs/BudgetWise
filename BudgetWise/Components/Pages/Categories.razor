@@ -1,0 +1,432 @@
+@page "/categories"
+@using BudgetWise.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@attribute [StreamRendering]
+@attribute [Authorize]
+
+<PageTitle>Categories</PageTitle>
+
+@inject ApplicationDbContext Context
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<User> UserManager
+
+<h1 class="mb-4">Categories</h1>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">@ErrorMessage</div>
+}
+
+@if (!string.IsNullOrEmpty(SuccessMessage))
+{
+    <div class="alert alert-success" role="status">@SuccessMessage</div>
+}
+
+@if (user is null)
+{
+    <p>You must be logged in to manage categories.</p>
+}
+else
+{
+    <!-- ADD CATEGORY FORM -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>@FormTitle</strong>
+        </div>
+        <div class="card-body">
+            <EditForm Model="@editCategory" OnValidSubmit="@SaveCategory">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="mb-3">
+                    <label class="form-label" for="categoryNameInput">Category Name</label>
+                    <InputText id="categoryNameInput"
+                               class="form-control"
+                               @bind-Value="editCategory.Name"
+                               placeholder="e.g. Groceries, Rent, Entertainment" />
+                </div>
+
+                <button class="btn btn-primary"
+                        type="submit"
+                        disabled="@IsBusy">
+                    @(IsEditing ? "Update Category" : "Add Category")
+                </button>
+
+                @if (IsEditing)
+                {
+                    <button type="button"
+                            class="btn btn-secondary ms-2"
+                            @onclick="CancelEdit"
+                            disabled="@IsBusy">
+                        Cancel
+                    </button>
+                }
+            </EditForm>
+        </div>
+    </div>
+
+    <!-- DEFAULT CATEGORIES -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Default Categories</strong>
+            <span class="badge bg-secondary ms-2">Common</span>
+        </div>
+        <div class="card-body p-0">
+            @if (defaultCategories.Count == 0)
+            {
+                <p class="m-3">No default categories available.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category Name</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cat in defaultCategories)
+                            {
+                                <tr>
+                                    <td>
+                                        @cat.Name
+                                        <span class="badge bg-info ms-2">Default</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary"
+                                                @onclick="() => StartEdit(cat)"
+                                                title="Edit category name">
+                                            Edit
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- CUSTOM CATEGORIES -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>Your Custom Categories</strong>
+            <button class="btn btn-sm btn-outline-primary"
+                    @onclick="StartCreate">
+                Add New Category
+            </button>
+        </div>
+        <div class="card-body p-0">
+            @if (customCategories.Count == 0)
+            {
+                <p class="m-3">
+                    No custom categories yet. Add one above to create your own categories.
+                </p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category Name</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cat in customCategories)
+                            {
+                                <tr>
+                                    <td>@cat.Name</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-2"
+                                                @onclick="() => StartEdit(cat)">
+                                            Edit
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                @onclick="() => ConfirmDelete(cat)">
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private User? user;
+    private List<Category> defaultCategories = new();
+    private List<Category> customCategories = new();
+    private Category editCategory = new();
+
+    private string FormTitle { get; set; } = "Add New Category";
+    private bool IsEditing { get; set; }
+    private bool IsBusy { get; set; }
+    private string? ErrorMessage { get; set; }
+    private string? SuccessMessage { get; set; }
+
+    // Common default categories
+    private readonly List<string> CommonCategories = new()
+    {
+        "Groceries",
+        "Rent/Mortgage",
+        "Utilities",
+        "Transportation",
+        "Entertainment",
+        "Dining Out",
+        "Healthcare",
+        "Insurance",
+        "Education",
+        "Shopping",
+        "Personal Care",
+        "Subscriptions",
+        "Savings",
+        "Debt Payment",
+        "General"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            user = await UserManager.GetUserAsync(authState.User);
+        }
+
+        if (user is null)
+        {
+            ErrorMessage = "Unable to load user.";
+            return;
+        }
+
+        await EnsureDefaultCategoriesAsync();
+        await LoadCategoriesAsync();
+        StartCreate();
+    }
+
+    private async Task EnsureDefaultCategoriesAsync()
+    {
+        // Check if default categories exist, if not create them
+        var existingDefaults = await Context.Categories
+            .Where(c => c.IsDefault && c.UserId == null)
+            .ToListAsync();
+
+        var existingNames = existingDefaults.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var categoryName in CommonCategories)
+        {
+            if (!existingNames.Contains(categoryName))
+            {
+                Context.Categories.Add(new Category
+                {
+                    Name = categoryName,
+                    IsDefault = true,
+                    UserId = null // Default categories are available to all users
+                });
+            }
+        }
+
+        try
+        {
+            await Context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // Ignore if categories already exist (race condition)
+        }
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        if (user is null) return;
+
+        // Load default categories (available to all users)
+        defaultCategories = await Context.Categories
+            .Where(c => c.IsDefault && c.UserId == null)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        // Load custom categories for this user
+        customCategories = await Context.Categories
+            .Where(c => !c.IsDefault && c.UserId == user.Id)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+    }
+
+    private void StartCreate()
+    {
+        IsEditing = false;
+        FormTitle = "Add New Category";
+        SuccessMessage = ErrorMessage = null;
+
+        editCategory = new Category
+        {
+            UserId = user!.Id,
+            Name = "",
+            IsDefault = false
+        };
+    }
+
+    private void StartEdit(Category c)
+    {
+        IsEditing = true;
+        FormTitle = $"Edit Category – {c.Name}";
+        SuccessMessage = ErrorMessage = null;
+
+        editCategory = new Category
+        {
+            Id = c.Id,
+            UserId = c.UserId,
+            Name = c.Name,
+            IsDefault = c.IsDefault
+        };
+    }
+
+    private async Task SaveCategory()
+    {
+        if (user is null)
+        {
+            ErrorMessage = "You must be logged in to save a category.";
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        try
+        {
+            // Trim and validate name
+            editCategory.Name = editCategory.Name?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(editCategory.Name))
+            {
+                ErrorMessage = "Category name cannot be empty.";
+                IsBusy = false;
+                return;
+            }
+
+            // Check for duplicate names (case-insensitive)
+            var existing = await Context.Categories
+                .FirstOrDefaultAsync(c => 
+                    c.Name.ToLower() == editCategory.Name.ToLower() &&
+                    ((c.UserId == user.Id && !c.IsDefault) || 
+                     (c.IsDefault && c.UserId == null && editCategory.IsDefault)) &&
+                    c.Id != editCategory.Id);
+
+            if (existing != null)
+            {
+                ErrorMessage = "A category with this name already exists.";
+                IsBusy = false;
+                return;
+            }
+
+            if (editCategory.Id == 0)
+            {
+                // New category - always custom for users
+                editCategory.UserId = user.Id;
+                editCategory.IsDefault = false;
+                Context.Categories.Add(editCategory);
+            }
+            else
+            {
+                // Update existing category
+                var existingCategory = await Context.Categories
+                    .FirstOrDefaultAsync(c => c.Id == editCategory.Id);
+
+                if (existingCategory == null)
+                {
+                    ErrorMessage = "Category not found.";
+                    IsBusy = false;
+                    return;
+                }
+
+                // Allow editing default categories (but they remain defaults)
+                existingCategory.Name = editCategory.Name;
+            }
+
+            await Context.SaveChangesAsync();
+            await LoadCategoriesAsync();
+
+            SuccessMessage = IsEditing ? "Category updated!" : "Category added!";
+            StartCreate();
+        }
+        catch (DbUpdateException ex)
+        {
+            ErrorMessage = "A category with this name already exists.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error saving: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void CancelEdit()
+    {
+        StartCreate();
+    }
+
+    private async Task ConfirmDelete(Category c)
+    {
+        if (user is null)
+        {
+            ErrorMessage = "You must be logged in to delete a category.";
+            return;
+        }
+
+        // Don't allow deleting default categories
+        if (c.IsDefault)
+        {
+            ErrorMessage = "Default categories cannot be deleted.";
+            return;
+        }
+
+        // Verify it belongs to the current user
+        if (c.UserId != user.Id)
+        {
+            ErrorMessage = "You can only delete your own categories.";
+            return;
+        }
+
+        try
+        {
+            // Check if category is used in transactions or budgets
+            var usedInTransactions = await Context.UserTransactions
+                .AnyAsync(t => t.UserId == user.Id && t.Category == c.Name);
+
+            var usedInBudgets = await Context.Budgets
+                .AnyAsync(b => b.UserId == user.Id && b.Category == c.Name);
+
+            if (usedInTransactions || usedInBudgets)
+            {
+                ErrorMessage = $"Cannot delete category '{c.Name}' because it is used in transactions or budgets. Please update or delete those first.";
+                return;
+            }
+
+            Context.Categories.Remove(c);
+            await Context.SaveChangesAsync();
+
+            SuccessMessage = "Category deleted.";
+            await LoadCategoriesAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error deleting: {ex.Message}";
+        }
+    }
+}
+

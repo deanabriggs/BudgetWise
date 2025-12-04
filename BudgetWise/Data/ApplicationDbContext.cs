@@ -28,6 +28,9 @@ namespace BudgetWise.Data
         // NEW: Savings goals table
         public DbSet<SavingsGoal> SavingsGoals { get; set; } = default!;
 
+        // Categories table (default and custom user categories)
+        public DbSet<Category> Categories { get; set; } = default!;
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -71,6 +74,18 @@ namespace BudgetWise.Data
                 .WithMany(u => u.SavingsGoals)
                 .HasForeignKey(g => g.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // ----------- CATEGORY RELATIONSHIP -----------
+            builder.Entity<Category>()
+                .HasOne(c => c.User)
+                .WithMany()
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Prevent duplicate category names for the same user
+            builder.Entity<Category>()
+                .HasIndex(c => new { c.UserId, c.Name })
+                .IsUnique();
         }
     }
 }
