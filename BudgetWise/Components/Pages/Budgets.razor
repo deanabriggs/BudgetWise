@@ -42,9 +42,15 @@ else
 
                 <div class="mb-3">
                     <label class="form-label" for="categoryInput">Category</label>
-                    <InputText id="categoryInput"
-                               class="form-control"
-                               @bind-Value="editBudget.Category" />
+                    <InputSelect id="categoryInput"
+                                 class="form-select"
+                                 @bind-Value="editBudget.Category">
+                        <option value="">Select a category</option>
+                        @foreach (var category in availableCategories)
+                        {
+                            <option value="@category.Name">@category.Name</option>
+                        }
+                    </InputSelect>
                 </div>
 
                 <div class="row mb-3">
@@ -159,6 +165,7 @@ else
     private User? user;
     private List<Budget> budgets = new();
     private Budget editBudget = new();
+    private List<Category> availableCategories = new();
 
     private string FormTitle { get; set; } = "Add New Budget";
     private bool IsEditing { get; set; }
@@ -175,6 +182,20 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await InitializeUserAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Refresh categories when navigating to this page to ensure newly added categories are available
+        if (user is not null)
+        {
+            await LoadCategoriesAsync();
+        }
+    }
+
+    private async Task InitializeUserAsync()
+    {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
 
         if (authState.User.Identity?.IsAuthenticated == true)
@@ -188,8 +209,28 @@ else
             return;
         }
 
+        await LoadCategoriesAsync();
         await LoadBudgetsAsync();
         StartCreate();
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        if (user is null) return;
+
+        try
+        {
+            // Load default categories (UserId is null) and user's custom categories
+            availableCategories = await Context.Categories
+                .Where(c => c.UserId == null || c.UserId == user.Id)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+        }
+        catch (Exception)
+        {
+            // If Categories table doesn't exist yet, use empty list
+            availableCategories = new List<Category>();
+        }
     }
 
     private async Task LoadBudgetsAsync()

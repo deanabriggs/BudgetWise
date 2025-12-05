@@ -72,11 +72,15 @@ else
                 </div>
                 <div class="col-md-3">
                     <label class="form-label" for="filterCategory">Category</label>
-                    <input id="filterCategory"
-                           class="form-control"
-                           type="text"
-                           @bind="FilterCategory"
-                           placeholder="e.g. Groceries" />
+                    <select id="filterCategory"
+                            class="form-select"
+                            @bind="FilterCategory">
+                        <option value="">All Categories</option>
+                        @foreach (var category in availableCategories)
+                        {
+                            <option value="@category.Name">@category.Name</option>
+                        }
+                    </select>
                 </div>
                 <div class="col-md-3">
                     <button class="btn btn-primary w-100"
@@ -206,9 +210,15 @@ else
 
         <div class="mb-3">
             <label for="addCategory" class="form-label">Category</label>
-            <InputText id="addCategory"
-                       class="form-control"
-                       @bind-Value="newTransaction.Category" />
+            <InputSelect id="addCategory"
+                         class="form-select"
+                         @bind-Value="newTransaction.Category">
+                <option value="">Select a category</option>
+                @foreach (var category in availableCategories)
+                {
+                    <option value="@category.Name">@category.Name</option>
+                }
+            </InputSelect>
         </div>
 
         <div class="mb-3">
@@ -258,9 +268,15 @@ else
 
         <div class="mb-3">
             <label for="editCategory" class="form-label">Category</label>
-            <InputText id="editCategory"
-                       class="form-control"
-                       @bind-Value="editTransaction.Category" />
+            <InputSelect id="editCategory"
+                         class="form-select"
+                         @bind-Value="editTransaction.Category">
+                <option value="">Select a category</option>
+                @foreach (var category in availableCategories)
+                {
+                    <option value="@category.Name">@category.Name</option>
+                }
+            </InputSelect>
         </div>
 
         <div class="mb-3">
@@ -374,6 +390,7 @@ else
     private UserTransaction newTransaction = new();
     private UserTransaction editTransaction = new();
     private UserTransaction? deleteTarget;
+    private List<Category> availableCategories = new();
 
     private bool IsAddModalOpen { get; set; }
     private bool IsEditModalOpen { get; set; }
@@ -424,8 +441,37 @@ else
         FilterMonth = now.Month;
         FilterYear = now.Year;
 
+        await LoadCategoriesAsync();
         await LoadTransactionsAsync();
         ResetNewTransaction();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Refresh categories when navigating to this page to ensure newly added categories are available
+        if (user is not null)
+        {
+            await LoadCategoriesAsync();
+        }
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        if (user is null) return;
+
+        try
+        {
+            // Load default categories (UserId is null) and user's custom categories
+            availableCategories = await Context.Categories
+                .Where(c => c.UserId == null || c.UserId == user.Id)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            // If Categories table doesn't exist yet, use empty list
+            availableCategories = new List<Category>();
+        }
     }
 
     private async Task LoadTransactionsAsync()
@@ -453,7 +499,7 @@ else
                 query = query.Where(t => t.Date.Year == y);
 
             if (!string.IsNullOrWhiteSpace(FilterCategory))
-                query = query.Where(t => t.Category.Contains(FilterCategory));
+                query = query.Where(t => t.Category == FilterCategory);
 
             transactions = await query
                 .OrderByDescending(t => t.Date)

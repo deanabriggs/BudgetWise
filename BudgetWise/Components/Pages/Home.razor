@@ -333,7 +333,13 @@ else
                         <InputText class="form-control mb-2" @bind-Value="QuickTransaction.Description" />
 
                         <label>Category</label>
-                        <InputText class="form-control mb-2" @bind-Value="QuickTransaction.Category" />
+                        <InputSelect class="form-select mb-2" @bind-Value="QuickTransaction.Category">
+                            <option value="">Select a category</option>
+                            @foreach (var category in availableCategories)
+                            {
+                                <option value="@category.Name">@category.Name</option>
+                            }
+                        </InputSelect>
 
                         <label>Amount</label>
                         <InputNumber class="form-control mb-2" @bind-Value="QuickTransaction.Amount" />
@@ -432,6 +438,7 @@ else
 
     // Quick Add
     private UserTransaction QuickTransaction = new();
+    private List<Category> availableCategories = new();
 
     // Search for recent transactions
     private string TransactionSearch = string.Empty;
@@ -471,6 +478,7 @@ else
                 return;
             }
 
+            await LoadCategoriesAsync();
             await LoadDashboard();
         }
         catch (Exception ex)
@@ -480,6 +488,34 @@ else
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Refresh categories when navigating to this page to ensure newly added categories are available
+        if (user is not null && !IsLoading)
+        {
+            await LoadCategoriesAsync();
+        }
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        if (user is null) return;
+
+        try
+        {
+            // Load default categories (UserId is null) and user's custom categories
+            availableCategories = await Context.Categories
+                .Where(c => c.UserId == null || c.UserId == user.Id)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+        }
+        catch (Exception)
+        {
+            // If Categories table doesn't exist yet, use empty list
+            availableCategories = new List<Category>();
         }
     }
 
