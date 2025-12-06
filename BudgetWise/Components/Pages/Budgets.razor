@@ -46,6 +46,8 @@ else
                                  class="form-select"
                                  @bind-Value="editBudget.Category">
                         <option value="">Select a category</option>
+                        <option value="Income">Income</option>
+                        <option value="Savings">Savings</option>
                         @foreach (var category in availableCategories)
                         {
                             <option value="@category.Name">@category.Name</option>

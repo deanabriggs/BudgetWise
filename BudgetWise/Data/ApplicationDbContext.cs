@@ -31,9 +31,19 @@ namespace BudgetWise.Data
         // Categories table (default and custom user categories)
         public DbSet<Category> Categories { get; set; } = default!;
 
+        // NEW: Accounts table
+        public DbSet<Account> Accounts { get; set; } = default!;
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            // ----------- ACCOUNT RELATIONSHIP -----------
+            builder.Entity<Account>()
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ----------- TRANSACTIONS RELATIONSHIP -----------
             builder.Entity<UserTransaction>()
@@ -41,6 +51,13 @@ namespace BudgetWise.Data
                 .WithMany(u => u.Transactions)
                 .HasForeignKey(t => t.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Transaction to Account relationship
+            builder.Entity<UserTransaction>()
+                .HasOne(t => t.Account)
+                .WithMany(a => a.Transactions)
+                .HasForeignKey(t => t.AccountId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent deleting account with transactions
 
             // ----------- BUDGET RELATIONSHIP -----------
             builder.Entity<Budget>()

@@ -38,6 +38,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xCdWRnZXREYXNoYm9hcmQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/git/cse325/BudgetWise/BudgetWise/Components/Pages/Accounts.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBY2NvdW50cy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/git/cse325/BudgetWise/BudgetWise/Components/Pages/Budgets.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xCdWRnZXRzLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -46,28 +50,12 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDYXRlZ29yaWVzLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/git/cse325/BudgetWise/BudgetWise/Components/Pages/Debts.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xEZWJ0cy5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = 
-
 [C:/git/cse325/BudgetWise/BudgetWise/Components/Pages/Error.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xFcnJvci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/git/cse325/BudgetWise/BudgetWise/Components/Pages/Home.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIb21lLnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
-[C:/git/cse325/BudgetWise/BudgetWise/Components/Pages/IncomePage.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xJbmNvbWVQYWdlLnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
-[C:/git/cse325/BudgetWise/BudgetWise/Components/Pages/NetWorth.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xOZXRXb3J0aC5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = 
-
-[C:/git/cse325/BudgetWise/BudgetWise/Components/Pages/SavingsGoals.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTYXZpbmdzR29hbHMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/git/cse325/BudgetWise/BudgetWise/Components/Pages/Transactions.razor]

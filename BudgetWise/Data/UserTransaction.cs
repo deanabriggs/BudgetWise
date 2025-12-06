@@ -21,6 +21,10 @@ namespace BudgetWise.Data
         [Required]
         public string UserId { get; set; } = string.Empty;
 
+        // Foreign key to Account - every transaction is linked to an account
+        [Required]
+        public int AccountId { get; set; }
+
         // The calendar date for this transaction (no time of day needed).
         [Required]
         [DataType(DataType.Date)]
@@ -48,5 +52,9 @@ namespace BudgetWise.Data
         // "virtual" allows EF Core to create proxies if needed.
         [ForeignKey(nameof(UserId))]
         public virtual User User { get; set; } = null!;
+
+        // Navigation property to Account
+        [ForeignKey(nameof(AccountId))]
+        public virtual Account Account { get; set; } = null!;
     }
 }

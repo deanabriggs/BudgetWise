@@ -1,0 +1,761 @@
+@page "/accounts"
+@using BudgetWise.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using BudgetWise.Components.Shared
+@attribute [StreamRendering]
+@attribute [Authorize]
+
+<PageTitle>Accounts</PageTitle>
+
+@inject ApplicationDbContext Context
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<User> UserManager
+
+<h1 class="mb-4">Accounts</h1>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @ErrorMessage
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(SuccessMessage))
+{
+    <div class="alert alert-success" role="status">
+        @SuccessMessage
+    </div>
+}
+
+@if (user is null)
+{
+    <p>You must be logged in to manage accounts.</p>
+}
+else
+{
+    <div class="mb-3">
+        <button class="btn btn-primary" @onclick="OpenAddAccountModal">
+            Add Account
+        </button>
+    </div>
+
+    @if (selectedAccount is null)
+    {
+        <!-- Accounts List View -->
+        <div class="row">
+            <!-- Assets Section -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Assets</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (assetAccounts.Count == 0)
+                        {
+                            <p class="text-muted">No asset accounts yet.</p>
+                        }
+                        else
+                        {
+                            <div class="list-group">
+                                @foreach (var account in assetAccounts)
+                                {
+                                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                            @onclick="@(() => SelectAccount(account))">
+                                        <div>
+                                            <strong>@account.Name</strong>
+                                            <br />
+                                            <small class="text-muted">@account.Type</small>
+                                        </div>
+                                        <span class="badge bg-success rounded-pill">
+                                            @account.CurrentBalance.ToString("C")
+                                        </span>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Debts Section -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">Debts</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (debtAccounts.Count == 0)
+                        {
+                            <p class="text-muted">No debt accounts yet.</p>
+                        }
+                        else
+                        {
+                            <div class="list-group">
+                                @foreach (var account in debtAccounts)
+                                {
+                                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                            @onclick="@(() => SelectAccount(account))">
+                                        <div>
+                                            <strong>@account.Name</strong>
+                                            <br />
+                                            <small class="text-muted">@account.Type</small>
+                                        </div>
+                                        <span class="badge bg-danger rounded-pill">
+                                            @account.CurrentBalance.ToString("C")
+                                        </span>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Account Details View -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">@selectedAccount.Name</h5>
+                    <small class="text-muted">@selectedAccount.Type</small>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-secondary me-2" @onclick="BackToAccounts">
+                        Back to Accounts
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" @onclick="OpenAddTransactionModal">
+                        Add Transaction
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Current Balance:</strong>
+                        <div class="h4 @(selectedAccount.CurrentBalance >= 0 ? "text-success" : "text-danger")">
+                            @selectedAccount.CurrentBalance.ToString("C")
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Starting Balance:</strong>
+                        <div>@selectedAccount.StartingBalance.ToString("C")</div>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Total Transactions:</strong>
+                        <div>@accountTransactions.Count</div>
+                    </div>
+                </div>
+
+                <hr />
+
+                <h6>Transactions</h6>
+                @if (accountTransactions.Count == 0)
+                {
+                    <p class="text-muted">No transactions yet.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th class="text-end">Amount</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var t in accountTransactions)
+                                {
+                                    <tr>
+                                        <td>@t.Date.ToString("yyyy-MM-dd")</td>
+                                        <td>@t.Description</td>
+                                        <td>@t.Category</td>
+                                        <td class="text-end @(t.Amount < 0 ? "text-danger" : "text-success")">
+                                            @t.Amount.ToString("C")
+                                        </td>
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-secondary me-2"
+                                                    @onclick="@(() => OpenEditTransactionModal(t))">
+                                                Edit
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    @onclick="@(() => OpenDeleteTransactionModal(t))">
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+<!-- Add Account Modal -->
+<SimpleModal IsOpen="@IsAddAccountModalOpen"
+             Title="Add Account"
+             OnClose="CloseAddAccountModal">
+    <EditForm Model="@newAccount" OnValidSubmit="@SaveNewAccount">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="addAccountType" class="form-label">Account Type</label>
+            <InputSelect id="addAccountType"
+                         class="form-select"
+                         @bind-Value="newAccount.Type">
+                <option value="@AccountType.Checking">Checking</option>
+                <option value="@AccountType.Savings">Savings</option>
+                <option value="@AccountType.Cash">Cash</option>
+                <option value="@AccountType.Retirement">Retirement</option>
+                <option value="@AccountType.CreditCard">Credit Card</option>
+                <option value="@AccountType.Loan">Loan</option>
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label for="addAccountName" class="form-label">Account Name</label>
+            <InputText id="addAccountName"
+                       class="form-control"
+                       @bind-Value="newAccount.Name" />
+        </div>
+
+        <div class="mb-3">
+            <label for="addStartingBalance" class="form-label">Starting Balance</label>
+            <InputNumber id="addStartingBalance"
+                         class="form-control"
+                         @bind-Value="newAccount.StartingBalance" />
+        </div>
+
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-secondary me-2"
+                    @onclick="CloseAddAccountModal" disabled="@IsBusy">
+                Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" disabled="@IsBusy">
+                @(IsBusy ? "Saving..." : "Save")
+            </button>
+        </div>
+    </EditForm>
+</SimpleModal>
+
+<!-- Add Transaction Modal -->
+<SimpleModal IsOpen="@IsAddTransactionModalOpen"
+             Title="Add Transaction"
+             OnClose="CloseAddTransactionModal">
+    <EditForm Model="@newTransaction" OnValidSubmit="@SaveNewTransaction">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="addDate" class="form-label">Date</label>
+            <InputDate id="addDate"
+                       class="form-control"
+                       @bind-Value="newTransaction.Date" />
+        </div>
+
+        <div class="mb-3">
+            <label for="addDescription" class="form-label">Description</label>
+            <InputText id="addDescription"
+                       class="form-control"
+                       @bind-Value="newTransaction.Description" />
+        </div>
+
+        <div class="mb-3">
+            <label for="addCategory" class="form-label">Category</label>
+            <InputSelect id="addCategory"
+                         class="form-select"
+                         @bind-Value="newTransaction.Category">
+                <option value="">Select a category</option>
+                @foreach (var category in availableCategories)
+                {
+                    <option value="@category.Name">@category.Name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label for="addAmount" class="form-label">Amount</label>
+            <InputNumber id="addAmount"
+                         class="form-control"
+                         @bind-Value="newTransaction.Amount" />
+            <div class="form-text">
+                <strong>Positive</strong> values = income (e.g. <code>1500</code> for paycheck).<br />
+                <strong>Negative</strong> values = expenses (e.g. <code>-45.50</code> for groceries).
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-secondary me-2"
+                    @onclick="CloseAddTransactionModal" disabled="@IsBusy">
+                Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" disabled="@IsBusy">
+                @(IsBusy ? "Saving..." : "Save")
+            </button>
+        </div>
+    </EditForm>
+</SimpleModal>
+
+<!-- Edit Transaction Modal -->
+<SimpleModal IsOpen="@IsEditTransactionModalOpen"
+             Title="Edit Transaction"
+             OnClose="CloseEditTransactionModal">
+    <EditForm Model="@editTransaction" OnValidSubmit="@SaveEditedTransaction">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="editDate" class="form-label">Date</label>
+            <InputDate id="editDate"
+                       class="form-control"
+                       @bind-Value="editTransaction.Date" />
+        </div>
+
+        <div class="mb-3">
+            <label for="editDescription" class="form-label">Description</label>
+            <InputText id="editDescription"
+                       class="form-control"
+                       @bind-Value="editTransaction.Description" />
+        </div>
+
+        <div class="mb-3">
+            <label for="editCategory" class="form-label">Category</label>
+            <InputSelect id="editCategory"
+                         class="form-select"
+                         @bind-Value="editTransaction.Category">
+                <option value="">Select a category</option>
+                @foreach (var category in availableCategories)
+                {
+                    <option value="@category.Name">@category.Name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label for="editAmount" class="form-label">Amount</label>
+            <InputNumber id="editAmount"
+                         class="form-control"
+                         @bind-Value="editTransaction.Amount" />
+        </div>
+
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-secondary me-2"
+                    @onclick="CloseEditTransactionModal" disabled="@IsBusy">
+                Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" disabled="@IsBusy">
+                @(IsBusy ? "Saving..." : "Save Changes")
+            </button>
+        </div>
+    </EditForm>
+</SimpleModal>
+
+<!-- Delete Transaction Modal -->
+<SimpleModal IsOpen="@IsDeleteTransactionModalOpen"
+             Title="Delete Transaction"
+             OnClose="CloseDeleteTransactionModal">
+    @if (deleteTarget is not null)
+    {
+        <p>Are you sure you want to delete this transaction?</p>
+        <ul>
+            <li><strong>Date:</strong> @deleteTarget.Date</li>
+            <li><strong>Description:</strong> @deleteTarget.Description</li>
+            <li><strong>Category:</strong> @deleteTarget.Category</li>
+            <li><strong>Amount:</strong> @deleteTarget.Amount.ToString("C")</li>
+        </ul>
+
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-secondary me-2"
+                    @onclick="CloseDeleteTransactionModal" disabled="@IsBusy">
+                Cancel
+            </button>
+            <button type="button" class="btn btn-danger"
+                    @onclick="DeleteTransaction" disabled="@IsBusy">
+                @(IsBusy ? "Deleting..." : "Delete")
+            </button>
+        </div>
+    }
+</SimpleModal>
+
+<style>
+    a:focus, button:focus, input:focus, select:focus {
+        outline: 3px solid #ffeb3b;
+        outline-offset: 2px;
+    }
+</style>
+
+@code {
+    private User? user;
+    private List<Account> allAccounts = new();
+    private Account? selectedAccount;
+    private List<UserTransaction> accountTransactions = new();
+    private List<Category> availableCategories = new();
+
+    private Account newAccount = new();
+    private UserTransaction newTransaction = new();
+    private UserTransaction editTransaction = new();
+    private UserTransaction? deleteTarget;
+
+    private bool IsAddAccountModalOpen { get; set; }
+    private bool IsAddTransactionModalOpen { get; set; }
+    private bool IsEditTransactionModalOpen { get; set; }
+    private bool IsDeleteTransactionModalOpen { get; set; }
+
+    private bool IsBusy { get; set; }
+    private string? ErrorMessage { get; set; }
+    private string? SuccessMessage { get; set; }
+
+    private List<Account> assetAccounts => allAccounts
+        .Where(a => a.Type == AccountType.Checking || 
+                    a.Type == AccountType.Savings || 
+                    a.Type == AccountType.Cash || 
+                    a.Type == AccountType.Retirement)
+        .OrderBy(a => a.Name)
+        .ToList();
+
+    private List<Account> debtAccounts => allAccounts
+        .Where(a => a.Type == AccountType.CreditCard || a.Type == AccountType.Loan)
+        .OrderBy(a => a.Name)
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        if (authState.User.Identity?.IsAuthenticated ?? false)
+        {
+            user = await UserManager.GetUserAsync(authState.User);
+        }
+
+        if (user is null)
+        {
+            ErrorMessage = "Unable to load the current user. Please log in again.";
+            return;
+        }
+
+        await LoadCategoriesAsync();
+        await LoadAccountsAsync();
+        ResetNewAccount();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (user is not null)
+        {
+            await LoadCategoriesAsync();
+        }
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        if (user is null) return;
+
+        try
+        {
+            availableCategories = await Context.Categories
+                .Where(c => c.UserId == null || c.UserId == user.Id)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+        }
+        catch
+        {
+            availableCategories = new List<Category>();
+        }
+    }
+
+    private async Task LoadAccountsAsync()
+    {
+        if (user is null)
+        {
+            allAccounts.Clear();
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = null;
+
+        try
+        {
+            allAccounts = await Context.Accounts
+                .Where(a => a.UserId == user.Id)
+                .OrderBy(a => a.Name)
+                .ToListAsync();
+
+            // Recalculate balances for all accounts
+            foreach (var account in allAccounts)
+            {
+                await RecalculateAccountBalance(account.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading accounts: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task RecalculateAccountBalance(int accountId)
+    {
+        var account = await Context.Accounts.FindAsync(accountId);
+        if (account is null) return;
+
+        var transactions = await Context.UserTransactions
+            .Where(t => t.AccountId == accountId)
+            .ToListAsync();
+
+        account.CurrentBalance = account.StartingBalance + transactions.Sum(t => t.Amount);
+        Context.Accounts.Update(account);
+        await Context.SaveChangesAsync();
+    }
+
+    private async Task SelectAccount(Account account)
+    {
+        selectedAccount = account;
+        await LoadAccountTransactions();
+    }
+
+    private void BackToAccounts()
+    {
+        selectedAccount = null;
+        accountTransactions.Clear();
+    }
+
+    private async Task LoadAccountTransactions()
+    {
+        if (selectedAccount is null) return;
+
+        try
+        {
+            accountTransactions = await Context.UserTransactions
+                .Where(t => t.AccountId == selectedAccount.Id)
+                .OrderByDescending(t => t.Date)
+                .ThenByDescending(t => t.Id)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading transactions: {ex.Message}";
+        }
+    }
+
+    private void ResetNewAccount()
+    {
+        if (user is null) return;
+
+        newAccount = new Account
+        {
+            UserId = user.Id,
+            Type = AccountType.Checking,
+            StartingBalance = 0,
+            CurrentBalance = 0
+        };
+    }
+
+    private void OpenAddAccountModal()
+    {
+        SuccessMessage = ErrorMessage = null;
+        ResetNewAccount();
+        IsAddAccountModalOpen = true;
+    }
+
+    private void CloseAddAccountModal() => IsAddAccountModalOpen = false;
+
+    private async Task SaveNewAccount()
+    {
+        if (user is null) return;
+        IsBusy = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        try
+        {
+            newAccount.UserId = user.Id;
+            newAccount.CurrentBalance = newAccount.StartingBalance;
+            Context.Accounts.Add(newAccount);
+            await Context.SaveChangesAsync();
+
+            SuccessMessage = "Account added successfully.";
+            CloseAddAccountModal();
+            await LoadAccountsAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error saving account: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void ResetNewTransaction()
+    {
+        if (user is null || selectedAccount is null) return;
+
+        newTransaction = new UserTransaction
+        {
+            UserId = user.Id,
+            AccountId = selectedAccount.Id,
+            Date = DateOnly.FromDateTime(DateTime.Today),
+            Category = "General",
+            Amount = 0
+        };
+    }
+
+    private void OpenAddTransactionModal()
+    {
+        if (selectedAccount is null) return;
+        SuccessMessage = ErrorMessage = null;
+        ResetNewTransaction();
+        IsAddTransactionModalOpen = true;
+    }
+
+    private void CloseAddTransactionModal() => IsAddTransactionModalOpen = false;
+
+    private async Task SaveNewTransaction()
+    {
+        if (user is null || selectedAccount is null) return;
+        IsBusy = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        try
+        {
+            newTransaction.UserId = user.Id;
+            newTransaction.AccountId = selectedAccount.Id;
+            Context.UserTransactions.Add(newTransaction);
+            await Context.SaveChangesAsync();
+
+            await RecalculateAccountBalance(selectedAccount.Id);
+            await LoadAccountsAsync();
+            await LoadAccountTransactions();
+
+            SuccessMessage = "Transaction added successfully.";
+            CloseAddTransactionModal();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error saving transaction: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void OpenEditTransactionModal(UserTransaction t)
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        editTransaction = new UserTransaction
+        {
+            Id = t.Id,
+            UserId = t.UserId,
+            AccountId = t.AccountId,
+            Date = t.Date,
+            Description = t.Description,
+            Category = t.Category,
+            Amount = t.Amount
+        };
+
+        IsEditTransactionModalOpen = true;
+    }
+
+    private void CloseEditTransactionModal() => IsEditTransactionModalOpen = false;
+
+    private async Task SaveEditedTransaction()
+    {
+        if (user is null || selectedAccount is null) return;
+        IsBusy = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        try
+        {
+            editTransaction.UserId = user.Id;
+            editTransaction.AccountId = selectedAccount.Id;
+            Context.UserTransactions.Update(editTransaction);
+            await Context.SaveChangesAsync();
+
+            await RecalculateAccountBalance(selectedAccount.Id);
+            await LoadAccountsAsync();
+            await LoadAccountTransactions();
+
+            SuccessMessage = "Transaction updated.";
+            CloseEditTransactionModal();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error updating transaction: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void OpenDeleteTransactionModal(UserTransaction t)
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+        deleteTarget = t;
+        IsDeleteTransactionModalOpen = true;
+    }
+
+    private void CloseDeleteTransactionModal()
+    {
+        IsDeleteTransactionModalOpen = false;
+        deleteTarget = null;
+    }
+
+    private async Task DeleteTransaction()
+    {
+        if (user is null || selectedAccount is null || deleteTarget is null) return;
+        IsBusy = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        try
+        {
+            var existing = await Context.UserTransactions
+                .FirstOrDefaultAsync(t => t.Id == deleteTarget.Id && t.UserId == user.Id);
+
+            if (existing is not null)
+            {
+                Context.UserTransactions.Remove(existing);
+                await Context.SaveChangesAsync();
+
+                await RecalculateAccountBalance(selectedAccount.Id);
+                await LoadAccountsAsync();
+                await LoadAccountTransactions();
+            }
+
+            SuccessMessage = "Transaction deleted.";
+            CloseDeleteTransactionModal();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error deleting transaction: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+}
+

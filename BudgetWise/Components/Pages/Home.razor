@@ -49,7 +49,7 @@ else
         <!-- Income -->
         <div class="col-md-4">
             <div class="card shadow-sm kpi-card kpi-clickable"
-                 @onclick="@(() => NavigateTo("/income"))"
+                 @onclick="@(() => NavigateTo("/budgets"))"
                  style="cursor:pointer;">
                 <div class="card-body">
                     <div class="kpi-label">Income (this month)</div>
@@ -75,7 +75,7 @@ else
         <!-- Expenses -->
         <div class="col-md-4">
             <div class="card shadow-sm kpi-card kpi-clickable"
-                 @onclick="@(() => NavigateTo("/transactions"))"
+                 @onclick="@(() => NavigateTo("/accounts"))"
                  style="cursor:pointer;">
                 <div class="card-body">
                     <div class="kpi-label">Expenses (this month)</div>
@@ -137,9 +137,7 @@ else
 
         <!-- Net worth quick estimate -->
         <div class="col-md-4">
-            <div class="card shadow-sm kpi-clickable"
-                 @onclick="@(() => NavigateTo("/networth"))"
-                 style="cursor:pointer;">
+            <div class="card shadow-sm">
                 <div class="card-header"><strong>Net Worth (Quick Estimate)</strong></div>
                 <div class="card-body">
                     <label>Total Assets</label>
@@ -200,16 +198,16 @@ else
         <!-- Savings Goals -->
         <div class="col-lg-4">
             <div class="card shadow-sm kpi-clickable"
-                 @onclick="@(() => NavigateTo("/savings-goals"))"
+                 @onclick="@(() => NavigateTo("/budgets"))"
                  style="cursor:pointer;">
                 <div class="card-header d-flex justify-content-between">
                     <strong>Savings Goals</strong>
-                    <a href="/savings-goals" class="small">Manage</a>
+                    <a href="/budgets" class="small">Manage</a>
                 </div>
                 <div class="card-body">
                     @if (SavingsGoals.Count == 0)
                     {
-                        <p>No goals. <a href="/savings-goals">Add one</a>.</p>
+                        <p>No goals. <a href="/budgets">Add one</a>.</p>
                     }
                     else
                     {
@@ -357,7 +355,7 @@ else
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between">
                     <strong>Recent Transactions</strong>
-                    <a href="/transactions" class="small">View all</a>
+                    <a href="/accounts" class="small">View all</a>
                 </div>
                 <div class="card-body">
                     <input class="form-control mb-2"
