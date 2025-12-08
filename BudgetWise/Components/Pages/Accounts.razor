@@ -127,6 +127,7 @@ else
                     <button class="btn btn-sm btn-outline-secondary me-2" @onclick="BackToAccounts">
                         Back to Accounts
                     </button>
+                    <ImportTransactionModal User="@user" ButtonText="Import transactions from .csv" ButtonClass="btn btn-sm btn-outline-primary" Account=selectedAccount />
                     <button class="btn btn-sm btn-outline-primary" @onclick="OpenAddTransactionModal">
                         Add Transaction
                     </button>
@@ -662,7 +663,7 @@ else
         ErrorMessage = null;
         SuccessMessage = null;
 
-        editTransaction = new UserTransaction
+        @* editTransaction = new UserTransaction
         {
             Id = t.Id,
             UserId = t.UserId,
@@ -671,7 +672,9 @@ else
             Description = t.Description,
             Category = t.Category,
             Amount = t.Amount
-        };
+        }; *@
+
+        editTransaction = t;
 
         IsEditTransactionModalOpen = true;
     }

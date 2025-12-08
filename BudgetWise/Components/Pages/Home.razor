@@ -138,14 +138,20 @@ else
         <!-- Net worth quick estimate -->
         <div class="col-md-4">
             <div class="card shadow-sm">
-                <div class="card-header"><strong>Net Worth (Quick Estimate)</strong></div>
+                <div class="card-header"><strong>Net Worth</strong></div>
                 <div class="card-body">
-                    <label>Total Assets</label>
-                    <InputNumber class="form-control mb-2" @bind-Value="TotalAssets" />
+                    <strong>Total Assets</strong>
+                    <div>
+                        $@TotalAssets
+                    </div>
 
-                    <label>Total Debts</label>
-                    <InputNumber class="form-control mb-2" @bind-Value="TotalDebts" />
+                    <strong>Total Debts</strong>
+                    <div>
+                        $@TotalDebts
+                    </div>
 
+                    <strong>Assets - Debts = Net Worth</strong>
+                    <br/>
                     <strong>Net Worth:</strong>
                     <span class="fw-bold @(NetWorth >= 0 ? "text-success" : "text-danger")">
                         @NetWorth.ToString("C")
@@ -325,13 +331,23 @@ else
                         <DataAnnotationsValidator />
 
                         <label>Date</label>
-                        <InputDate class="form-control mb-2" @bind-Value="QuickTransaction.Date" />
+                        <InputDate required aria-required="true" class="form-control mb-2" @bind-Value="QuickTransaction.Date" />
+
+                        <label>Account</label>
+                        <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="@QuickTransaction.AccountId">
+                            <option value="0">-- Select an option --</option>
+                            @foreach (var account in UserAccounts)
+                            {
+                                <option value="@account.Id">@account.Name</option>
+                            }
+                        </InputSelect>
+
 
                         <label>Description</label>
-                        <InputText class="form-control mb-2" @bind-Value="QuickTransaction.Description" />
+                        <InputText required aria-required="true" class="form-control mb-2" @bind-Value="QuickTransaction.Description" />
 
                         <label>Category</label>
-                        <InputSelect class="form-select mb-2" @bind-Value="QuickTransaction.Category">
+                        <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="QuickTransaction.Category">
                             <option value="">Select a category</option>
                             @foreach (var category in availableCategories)
                             {
@@ -340,9 +356,18 @@ else
                         </InputSelect>
 
                         <label>Amount</label>
-                        <InputNumber class="form-control mb-2" @bind-Value="QuickTransaction.Amount" />
+                        <InputNumber required aria-required="true" class="form-control mb-2" @bind-Value="QuickTransaction.Amount" />
+                        
+                        @{
+                            var isFormValid = QuickTransaction.AccountId > 0 
+                                && !String.IsNullOrEmpty(QuickTransaction.Description)
+                                && !String.IsNullOrEmpty(QuickTransaction.Category)
+                                && QuickTransaction.Amount > 0;
 
-                        <button class="btn btn-primary w-100">
+                            var buttonClass = isFormValid ? "btn btn-primary w-100" : "btn btn-secondary w-100";
+                        }
+
+                        <button class="@buttonClass">
                             Add Transaction
                         </button>
                     </EditForm>
@@ -450,13 +475,32 @@ else
               .ToList();
 
     // Manual net worth inputs
-    private decimal TotalAssets;
-    private decimal TotalDebts;
-    private decimal NetWorth => TotalAssets - TotalDebts;
+    private double TotalAssets => Context.Accounts.Where( 
+            t => t.UserId == user!.Id 
+            && (t.Type == AccountType.Checking 
+            || t.Type == AccountType.Cash 
+            || t.Type == AccountType.Retirement 
+            || t.Type == AccountType.Savings)).Sum(t => (double)t.CurrentBalance);
+
+    private double TotalDebts => Context.Accounts.Where( 
+            t => t.UserId == user!.Id 
+            && (t.Type == AccountType.Loan 
+            || t.Type == AccountType.CreditCard)).Sum(t => (double)t.CurrentBalance);
+            
+    private double NetWorth => TotalAssets - TotalDebts;
 
     // Motivational message
     private string MotivationalMessage { get; set; } = string.Empty;
 
+    // Get list of user accounts
+    private List<Account> UserAccounts = new List<Account>();
+
+    private async Task LoadUserAccounts()
+    {
+        var accounts = await Context.Accounts.Where(t => t.UserId == user!.Id).ToListAsync();
+        UserAccounts = accounts;
+    }
+    
     // ----- Lifecycle -----
 
     protected override async Task OnInitializedAsync()
@@ -476,6 +520,7 @@ else
                 return;
             }
 
+            await LoadUserAccounts();
             await LoadCategoriesAsync();
             await LoadDashboard();
         }
@@ -547,6 +592,8 @@ else
 
             await JS.InvokeVoidAsync("renderDailyTrendChart", days, incomes, expenses);
         }
+
+        
     }
 
     // ----- Data loading -----
@@ -607,6 +654,7 @@ else
         QuickTransaction = new UserTransaction
         {
             UserId = user.Id,
+            AccountId = QuickTransaction.AccountId,
             Date = DateOnly.FromDateTime(DateTime.Today),
             Category = "General",
         };

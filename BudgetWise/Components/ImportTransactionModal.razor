@@ -1,0 +1,241 @@
+@using BudgetWise.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.CodeAnalysis.Elfie.Serialization
+@using Microsoft.EntityFrameworkCore
+@using BudgetWise.Components.Shared
+@using System.IO
+@using Microsoft.EntityFrameworkCore.Metadata.Internal
+@using System.Globalization
+@using Microsoft.IdentityModel.Tokens
+@inject ApplicationDbContext Context
+@attribute [StreamRendering]
+@attribute [Authorize]
+
+<button onclick="@OpenImportModal" class="@ButtonClass" >
+    @ButtonText
+</button>
+
+@* Import CSV Model *@
+<SimpleModal IsOpen="@IsImportModalOpen" Title="Import Transactions" OnClose="CloseImportModal" SizeClass="xl">
+    <div>
+        <InputFile id="fileInput" class="visually-hidden" @key=@InputFileId accept=".csv" OnChange="OnInputFileChange" />
+        <label for="fileInput" class="btn btn-secondary">@InputFileMessage</label>
+
+        @if (DisplayImportedRows)
+        {
+            <button class="btn btn-primary" style="float: right; margin-left: 1em;" @onclick="SaveImportedTransactions">
+                Save Import
+            </button>
+        }
+        <button @onclick="CloseImportModal" class="btn btn-secondary" style="float: right; margin-left: 1em;">
+            Cancel
+        </button>
+    </div>
+
+    @if (DisplayImportedRows)
+    {
+        <p>Does this information look correct?</p>
+        <div class="import-container">
+            <table id="import-table">
+                <tr>
+                    <th class="bg-secondary text-white fw-normal">Date</th>
+                    <th class="bg-secondary text-white fw-normal">Description</th>
+                    <th class="bg-secondary text-white fw-normal">Category</th>
+                    <th class="bg-secondary text-white fw-normal">Amount</th>
+                </tr>
+                @foreach (var transaction in ImportedTransactions)
+                {
+                    NumberFormatInfo numberFormat = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
+                    numberFormat.CurrencyNegativePattern = 1;
+
+                    <tr>
+                        <td>@transaction.Date</td>
+                        <td>@transaction.Description</td>
+                        <td>@transaction.Category</td>
+                        <td>@((transaction.Amount > 0 ? "+" : "") + transaction.Amount.ToString("C", numberFormat))</td>
+                    </tr>
+                }
+            </table>
+        </div>
+    }
+    else if (IsBusy)
+    {
+        <p>Importing data...</p>
+    }
+</SimpleModal>
+
+@code {
+    [Parameter]
+    public required User User { get; set; }
+
+    [Parameter]
+    public required string ButtonText { get; set; }
+
+    [Parameter]
+    public required string ButtonClass { get; set; }
+
+    [Parameter]
+    public required Account Account { get; set ;}
+
+    private bool IsImportModalOpen { get; set; }
+    private Guid InputFileId = Guid.NewGuid();
+    private List<UserTransaction> ImportedTransactions = new List<UserTransaction>();
+    private bool DisplayImportedRows = false;
+    private string InputFileMessage = "Choose .csv file";
+    private bool IsBusy = false;
+    private string? ErrorMessage { get; set; }
+
+    private void OpenImportModal()
+    {
+        ResetImportFile();
+        IsImportModalOpen = true;
+    }
+
+    private void ResetImportFile()
+    {
+        InputFileId = Guid.NewGuid();
+        ImportedTransactions = new List<UserTransaction>();
+        DisplayImportedRows = false;
+        InputFileMessage = "Choose .csv file";
+    }
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        IsBusy = true; 
+        
+        DisplayImportedRows = false;
+        
+        ImportedTransactions = new List<UserTransaction>();
+
+        if (Path.GetExtension(e.File.Name).ToLower() != ".csv")
+        {
+            ResetImportFile();
+            return;
+        }
+
+        InputFileMessage = e.File.Name;
+
+        var lines = e.File;
+        var maxFileSize = 1024 * 1024 * 100;
+
+        try {
+            using var stream = e.File.OpenReadStream(maxFileSize);
+            var reader = new StreamReader(stream);
+
+            var currentLine = await reader.ReadLineAsync();
+
+            if (currentLine is null)
+                throw new IOException("File has no contents");
+
+            string[] columns = currentLine.Split(",");
+
+            int date = -1;
+            int description = -1;
+            int category = -1;
+            int amount = -1;
+            int debit = -1;
+            int credit = -1;
+
+            // Pull our column keys from the first row if there are any matches
+            for (int i = 0; i < columns.Length; i++)
+            {
+                var columnName = columns[i].ToLower();
+
+                if (columnName.Contains("date"))
+                    date = i;
+                else if (columnName == "description")
+                    description = i;
+                else if (columnName == "category")
+                    category = i;
+                else if (columnName == "amount")
+                    amount = i;
+                else if (columnName == "debit")
+                    debit = i;
+                else if (columnName == "credit")
+                    credit = i;
+            }
+
+            while (currentLine is not null)
+            {
+                currentLine = await reader.ReadLineAsync();
+
+                if (currentLine.IsNullOrEmpty() || currentLine is null)
+                {
+                    break;   
+                }
+                
+                var values = currentLine.Split(",");
+
+                decimal foundAmount = 0;
+
+                if (credit >= 0 && !values[credit].IsNullOrEmpty())
+                {
+                    Console.WriteLine(("C", credit > 0 ? values[credit] : ""));
+                    foundAmount = Decimal.Parse(values[credit]);
+                }
+                else if (debit >= 0 && !values[debit].IsNullOrEmpty())
+                {
+                    Console.WriteLine(("D", debit > 0 ? values[debit] : ""));
+                    foundAmount = -1 * Math.Abs(Decimal.Parse(values[debit]));
+                }
+                else if (amount >= 0 && !values[amount].IsNullOrEmpty())
+                {
+                    Console.WriteLine(("A", amount > 0 ? values[amount] : ""));
+                    foundAmount = Decimal.Parse(values[amount]);
+                }
+                
+                var transaction = new UserTransaction {
+                    Date = DateOnly.Parse(values[date]),
+                    Description = values[description],
+                    Category = values[category],
+                    Amount = foundAmount,
+                    AccountId = Account.Id,
+                };
+
+                ImportedTransactions.Add(transaction);
+
+                // simulate upload delay
+                @* System.Threading.Thread.Sleep(10); *@
+            }
+        }
+        catch (IOException ex)
+        {
+            ErrorMessage = $"Error importing transactions: {ex.Message}";
+        }
+        finally
+        {
+            StateHasChanged();
+            IsBusy = false;
+            DisplayImportedRows = true;
+        }
+    }
+
+    private async Task SaveImportedTransactions()
+    {
+        if (User is null || ImportedTransactions.Count == 0) return;
+
+        try {
+            foreach (var transaction in ImportedTransactions)
+            {
+                transaction.User = User;
+                Context.UserTransactions.Add(transaction);
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error importing transactions: {ex.Message}";
+        }
+        finally 
+        {
+            await Context.SaveChangesAsync();
+            CloseImportModal();
+        }
+    }
+
+    private void CloseImportModal()
+    {
+        IsImportModalOpen = false;
+        DisplayImportedRows = false;
+    }
+}
