@@ -11,7 +11,10 @@ builder.Services.AddServerSideBlazor();
 
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("Database")));
+{
+    options.EnableSensitiveDataLogging(true);
+    options.UseSqlite(builder.Configuration.GetConnectionString("Database"));
+});
 
 // Identity
 builder.Services.AddDefaultIdentity<User>(options =>
