@@ -186,7 +186,7 @@ else
                                 @foreach (var b in BudgetSummaries)
                                 {
                                     <tr>
-                                        <td>@b.Category</td>
+                                        <td>@b.Category!.Name</td>
                                         <td>@b.Budgeted.ToString("C")</td>
                                         <td class="text-danger">@b.Spent.ToString("C")</td>
                                         <td class="@(b.Remaining >= 0 ? "text-success" : "text-danger")">
@@ -265,7 +265,7 @@ else
                         {
                             <div class="mb-2">
                                 <div class="d-flex justify-content-between">
-                                    <span>@c.Category</span>
+                                    <span>@c.Category!.Name</span>
                                     <span>@c.Amount.ToString("C") (@c.PercentOfTotal.ToString("0")%)</span>
                                 </div>
                                 <div class="progress">
@@ -335,7 +335,7 @@ else
 
                         <label>Account</label>
                         <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="@QuickTransaction.AccountId">
-                            <option value="0">-- Select an option --</option>
+                            <option required value="0">-- Select an option --</option>
                             @foreach (var account in UserAccounts)
                             {
                                 <option value="@account.Id">@account.Name</option>
@@ -347,11 +347,11 @@ else
                         <InputText required aria-required="true" class="form-control mb-2" @bind-Value="QuickTransaction.Description" />
 
                         <label>Category</label>
-                        <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="QuickTransaction.Category">
+                        <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="QuickTransaction.CategoryId">
                             <option value="">Select a category</option>
                             @foreach (var category in availableCategories)
                             {
-                                <option value="@category.Name">@category.Name</option>
+                                <option value="@category.Id">@category.Name</option>
                             }
                         </InputSelect>
 
@@ -361,7 +361,7 @@ else
                         @{
                             var isFormValid = QuickTransaction.AccountId > 0 
                                 && !String.IsNullOrEmpty(QuickTransaction.Description)
-                                && !String.IsNullOrEmpty(QuickTransaction.Category)
+                                && !String.IsNullOrEmpty(QuickTransaction.Category!.Name)
                                 && QuickTransaction.Amount > 0;
 
                             var buttonClass = isFormValid ? "btn btn-primary w-100" : "btn btn-secondary w-100";
@@ -408,7 +408,7 @@ else
                                     <tr>
                                         <td>@t.Date.ToString("yyyy-MM-dd")</td>
                                         <td>@t.Description</td>
-                                        <td>@t.Category</td>
+                                        <td>@t.Category!.Name</td>
                                         <td class="text-end @(t.Amount < 0 ? "text-danger" : "text-success")">
                                             @t.Amount.ToString("C")
                                         </td>
@@ -470,7 +470,7 @@ else
             ? RecentTransactions
             : RecentTransactions.Where(t =>
                    (t.Description?.Contains(TransactionSearch, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                   (t.Category?.Contains(TransactionSearch, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                   (t.Category!.Name.Contains(TransactionSearch, StringComparison.OrdinalIgnoreCase)) ||
                    t.Amount.ToString().Contains(TransactionSearch))
               .ToList();
 
@@ -639,7 +639,7 @@ else
 
         // Derived data
         BuildBudgetSummaries(budgets, transactions);
-        BuildCategoryBreakdown(transactions);
+        await BuildCategoryBreakdown(transactions);
         BuildDaySummaries(transactions, incomes);
         await LoadLastMonthComparison();
         BuildMotivationalMessage();
@@ -650,13 +650,29 @@ else
             .Take(10)
             .ToList();
 
+        // Get general category
+        var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user.Id).FirstOrDefaultAsync();
+
+        if (defaultCategory is null)
+        {
+            defaultCategory = new Category
+            {
+                UserId = user.Id,
+                Name = "General",
+                IsDefault = true
+            };
+
+            Context.Categories.Add(defaultCategory);
+            await Context.SaveChangesAsync();
+        }
+
         // Reset quick form
         QuickTransaction = new UserTransaction
         {
             UserId = user.Id,
             AccountId = QuickTransaction.AccountId,
             Date = DateOnly.FromDateTime(DateTime.Today),
-            Category = "General",
+            Category = defaultCategory,
         };
     }
 
@@ -680,7 +696,7 @@ else
         }).ToList();
     }
 
-    private void BuildCategoryBreakdown(List<UserTransaction> transactions)
+    private async Task BuildCategoryBreakdown(List<UserTransaction> transactions)
     {
         var expenses = transactions.Where(t => t.Amount < 0).ToList();
 
@@ -692,8 +708,24 @@ else
 
         var total = Math.Abs(expenses.Sum(t => t.Amount));
 
+        // Get general category
+        var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user.Id).FirstOrDefaultAsync();
+
+        if (defaultCategory is null)
+        {
+            defaultCategory = new Category
+            {
+                UserId = user!.Id,
+                Name = "General",
+                IsDefault = true
+            };
+
+            Context.Categories.Add(defaultCategory);
+            await Context.SaveChangesAsync();
+        }
+
         CategoryBreakdown = expenses
-            .GroupBy(t => t.Category ?? "Uncategorized")
+            .GroupBy(t => t.Category ?? defaultCategory)
             .Select(g =>
             {
                 var amount = Math.Abs(g.Sum(x => x.Amount));
@@ -795,7 +827,7 @@ else
 
     private class BudgetSummary
     {
-        public string Category { get; set; } = "";
+        public Category? Category { get; set; }
         public decimal Budgeted { get; set; }
         public decimal Spent { get; set; }
         public decimal Remaining { get; set; }
@@ -803,7 +835,7 @@ else
 
     private class CategorySpendingSummary
     {
-        public string Category { get; set; } = "";
+        public Category? Category { get; set; }
         public decimal Amount { get; set; }
         public decimal PercentOfTotal { get; set; }
     }

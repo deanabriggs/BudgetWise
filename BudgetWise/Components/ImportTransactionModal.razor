@@ -52,7 +52,7 @@
                     <tr>
                         <td>@transaction.Date</td>
                         <td>@transaction.Description</td>
-                        <td>@transaction.Category</td>
+                        <td>@transaction.Category.Name</td>
                         <td>@((transaction.Amount > 0 ? "+" : "") + transaction.Amount.ToString("C", numberFormat))</td>
                     </tr>
                 }
@@ -119,6 +119,18 @@
         var lines = e.File;
         var maxFileSize = 1024 * 1024 * 100;
 
+        var existingCategories = await Context.Categories.Where(t => t.UserId == User.Id).ToListAsync();
+            HashSet<string> categories = new HashSet<string>();
+
+        // Add all categories to the categories set by name
+        foreach (var category in existingCategories)
+        {
+            if (!categories.Contains(category.Name))
+            {
+                categories.Add(category.Name);
+            }
+        }
+
         try {
             using var stream = e.File.OpenReadStream(maxFileSize);
             var reader = new StreamReader(stream);
@@ -184,16 +196,43 @@
                     Console.WriteLine(("A", amount > 0 ? values[amount] : ""));
                     foundAmount = Decimal.Parse(values[amount]);
                 }
-                
-                var transaction = new UserTransaction {
-                    Date = DateOnly.Parse(values[date]),
-                    Description = values[description],
-                    Category = values[category],
-                    Amount = foundAmount,
-                    AccountId = Account.Id,
-                };
 
-                ImportedTransactions.Add(transaction);
+                string categoryStr = category > 0 ? values[category] : "Gene";
+
+                if (!categories.Contains(categoryStr))
+                {
+                    categories.Add(categoryStr);
+
+                    var newCategory = new Category
+                    {
+                        UserId = User.Id,
+                        Name = categoryStr,
+                        IsDefault = false,
+                    }; 
+
+                    existingCategories.Add(newCategory);
+                    Context.Categories.Add(newCategory);
+                }
+
+                var foundCategory = existingCategories.Where(c => 
+                    (categoryStr.Contains(c.Name) || c.Name == categoryStr) 
+                    && c.UserId == User.Id).FirstOrDefault();
+
+                if (foundCategory is not null)
+                {
+                    UserTransaction? transaction = new UserTransaction {
+                        Date = DateOnly.Parse(values[date]),
+                        Description = values[description],
+                        Category = foundCategory,
+                        Amount = foundAmount,
+                        AccountId = Account.Id,
+                    };
+
+                    ImportedTransactions.Add(transaction);
+                }
+                else {
+                    throw new IOException("Could not find any categories");
+                }
 
                 // simulate upload delay
                 @* System.Threading.Thread.Sleep(10); *@
@@ -216,9 +255,11 @@
         if (User is null || ImportedTransactions.Count == 0) return;
 
         try {
+
             foreach (var transaction in ImportedTransactions)
             {
                 transaction.User = User;
+
                 Context.UserTransactions.Add(transaction);
             }
         }

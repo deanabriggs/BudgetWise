@@ -286,13 +286,13 @@ else
         FormTitle = $"Edit Category – {c.Name}";
         SuccessMessage = ErrorMessage = null;
 
-        editCategory = new Category
-        {
+        editCategory = c;//new Category
+        @* {
             Id = c.Id,
             UserId = c.UserId,
             Name = c.Name,
             IsDefault = c.IsDefault
-        };
+        }; *@
     }
 
     private async Task SaveCategory()
@@ -363,7 +363,7 @@ else
             SuccessMessage = IsEditing ? "Category updated!" : "Category added!";
             StartCreate();
         }
-        catch (DbUpdateException ex)
+        catch (DbUpdateException)
         {
             ErrorMessage = "A category with this name already exists.";
         }
@@ -408,10 +408,10 @@ else
         {
             // Check if category is used in transactions or budgets
             var usedInTransactions = await Context.UserTransactions
-                .AnyAsync(t => t.UserId == user.Id && t.Category == c.Name);
+                .AnyAsync(t => t.UserId == user.Id && t.Category == c);
 
             var usedInBudgets = await Context.Budgets
-                .AnyAsync(b => b.UserId == user.Id && b.Category == c.Name);
+                .AnyAsync(b => b.UserId == user.Id && b.Category! == c);
 
             if (usedInTransactions || usedInBudgets)
             {

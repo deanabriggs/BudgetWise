@@ -188,7 +188,7 @@
             .Select(b =>
             {
                 var rawSpent = transactions
-                    .Where(t => t.Category == b.Category && t.Amount < 0)
+                    .Where(t => t.CategoryId == b.Category.Id && t.Amount < 0)
                     .Sum(t => t.Amount);
 
                 var spent = Math.Abs(rawSpent);
@@ -196,7 +196,7 @@
 
                 return new BudgetSummary
                 {
-                    Category = b.Category,
+                    Category = b.Category!,
                     Budgeted = b.MonthlyLimit,
                     Spent = spent,
                     Remaining = remaining
@@ -208,7 +208,7 @@
 
     private class BudgetSummary
     {
-        public string Category { get; set; } = string.Empty;
+        public Category? Category { get; set; }
         public decimal Budgeted { get; set; }
         public decimal Spent { get; set; }
         public decimal Remaining { get; set; }

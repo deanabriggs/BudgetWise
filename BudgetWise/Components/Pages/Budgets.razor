@@ -44,7 +44,7 @@ else
                     <label class="form-label" for="categoryInput">Category</label>
                     <InputSelect id="categoryInput"
                                  class="form-select"
-                                 @bind-Value="editBudget.Category">
+                                 @bind-Value="editBudget.Category!.Name">
                         <option value="">Select a category</option>
                         <option value="Income">Income</option>
                         <option value="Savings">Savings</option>
@@ -137,7 +137,7 @@ else
                             @foreach (var b in budgets)
                             {
                                 <tr>
-                                    <td>@b.Category</td>
+                                    <td>@b.Category!.Name</td>
                                     <td>@MonthName(b.Month)</td>
                                     <td>@b.Year</td>
                                     <td class="text-end">
@@ -213,7 +213,7 @@ else
 
         await LoadCategoriesAsync();
         await LoadBudgetsAsync();
-        StartCreate();
+        await StartCreate();
     }
 
     private async Task LoadCategoriesAsync()
@@ -241,11 +241,11 @@ else
             .Where(b => b.UserId == user!.Id)
             .OrderByDescending(b => b.Year)
             .ThenByDescending(b => b.Month)
-            .ThenBy(b => b.Category)
+            .ThenBy(b => b.Category!.Name)
             .ToListAsync();
     }
 
-    private void StartCreate()
+    private async Task StartCreate()
     {
         IsEditing = false;
         FormTitle = "Add New Budget";
@@ -253,10 +253,26 @@ else
 
         var now = DateTime.Now;
 
+        // Get general category
+        var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user!.Id).FirstOrDefaultAsync();
+
+        if (defaultCategory is null)
+        {
+            defaultCategory = new Category
+            {
+                UserId = user!.Id,
+                Name = "General",
+                IsDefault = true
+            };
+
+            Context.Categories.Add(defaultCategory);
+            await Context.SaveChangesAsync();
+        }
+
         editBudget = new Budget
         {
             UserId = user!.Id,
-            Category = "",
+            Category = defaultCategory,
             Month = now.Month,
             Year = now.Year,
             MonthlyLimit = 0
@@ -266,7 +282,7 @@ else
     private void StartEdit(Budget b)
     {
         IsEditing = true;
-        FormTitle = $"Edit Budget – {b.Category}";
+        FormTitle = $"Edit Budget – {b.Category!.Name}";
         SuccessMessage = ErrorMessage = null;
 
         editBudget = new Budget
@@ -310,7 +326,7 @@ else
             await LoadBudgetsAsync();
 
             SuccessMessage = IsEditing ? "Budget updated!" : "Budget added!";
-            StartCreate();
+            await StartCreate();
         }
         catch (DbUpdateException)
         {
@@ -327,9 +343,9 @@ else
         }
     }
 
-    private void CancelEdit()
+    private async Task CancelEdit()
     {
-        StartCreate();
+        await StartCreate();
     }
 
     private async Task ConfirmDelete(Budget b)

@@ -11,45 +11,14 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BudgetWise.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251207151806_InitMigration")]
-    partial class InitMigration
+    [Migration("20251204195156_AddCategoriesTable")]
+    partial class AddCategoriesTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
-
-            modelBuilder.Entity("BudgetWise.Data.Account", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<decimal>("CurrentBalance")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("StartingBalance")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Accounts");
-                });
 
             modelBuilder.Entity("BudgetWise.Data.Budget", b =>
                 {
@@ -280,9 +249,6 @@ namespace BudgetWise.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("AccountId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
@@ -304,8 +270,6 @@ namespace BudgetWise.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AccountId");
 
                     b.HasIndex("UserId");
 
@@ -444,17 +408,6 @@ namespace BudgetWise.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("BudgetWise.Data.Account", b =>
-                {
-                    b.HasOne("BudgetWise.Data.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("BudgetWise.Data.Budget", b =>
                 {
                     b.HasOne("BudgetWise.Data.User", "User")
@@ -509,19 +462,11 @@ namespace BudgetWise.Migrations
 
             modelBuilder.Entity("BudgetWise.Data.UserTransaction", b =>
                 {
-                    b.HasOne("BudgetWise.Data.Account", "Account")
-                        .WithMany("Transactions")
-                        .HasForeignKey("AccountId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("BudgetWise.Data.User", "User")
                         .WithMany("Transactions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Account");
 
                     b.Navigation("User");
                 });
@@ -575,11 +520,6 @@ namespace BudgetWise.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("BudgetWise.Data.Account", b =>
-                {
-                    b.Navigation("Transactions");
                 });
 
             modelBuilder.Entity("BudgetWise.Data.User", b =>

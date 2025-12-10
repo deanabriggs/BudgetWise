@@ -3,6 +3,7 @@ using System;
 using BudgetWise.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BudgetWise.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251206170923_AddAccountsAndAccountTransactions")]
+    partial class AddAccountsAndAccountTransactions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
@@ -54,8 +57,10 @@ namespace BudgetWise.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CategoryId")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Month")
                         .HasColumnType("INTEGER");
@@ -72,9 +77,7 @@ namespace BudgetWise.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId");
-
-                    b.HasIndex("UserId", "CategoryId", "Month", "Year")
+                    b.HasIndex("UserId", "Category", "Month", "Year")
                         .IsUnique();
 
                     b.ToTable("Budgets");
@@ -283,8 +286,10 @@ namespace BudgetWise.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("CategoryId")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
 
                     b.Property<DateOnly>("Date")
                         .HasColumnType("TEXT");
@@ -301,8 +306,6 @@ namespace BudgetWise.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AccountId");
-
-                    b.HasIndex("CategoryId");
 
                     b.HasIndex("UserId");
 
@@ -454,19 +457,11 @@ namespace BudgetWise.Migrations
 
             modelBuilder.Entity("BudgetWise.Data.Budget", b =>
                 {
-                    b.HasOne("BudgetWise.Data.Category", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("BudgetWise.Data.User", "User")
                         .WithMany("Budgets")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Category");
 
                     b.Navigation("User");
                 });
@@ -520,12 +515,6 @@ namespace BudgetWise.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BudgetWise.Data.Category", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("BudgetWise.Data.User", "User")
                         .WithMany("Transactions")
                         .HasForeignKey("UserId")
@@ -533,8 +522,6 @@ namespace BudgetWise.Migrations
                         .IsRequired();
 
                     b.Navigation("Account");
-
-                    b.Navigation("Category");
 
                     b.Navigation("User");
                 });

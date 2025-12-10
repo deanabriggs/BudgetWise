@@ -68,7 +68,7 @@ namespace BudgetWise.Data
 
             // Prevent duplicate budgets for same user + category + month + year.
             builder.Entity<Budget>()
-                .HasIndex(b => new { b.UserId, b.Category, b.Month, b.Year })
+                .HasIndex(b => new { b.UserId, b.CategoryId, b.Month, b.Year })
                 .IsUnique();
 
             // ----------- INCOME RELATIONSHIP -----------

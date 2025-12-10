@@ -177,7 +177,7 @@ else
                                     <tr>
                                         <td>@t.Date.ToString("yyyy-MM-dd")</td>
                                         <td>@t.Description</td>
-                                        <td>@t.Category</td>
+                                        <td>@t.Category!.Name</td>
                                         <td class="text-end @(t.Amount < 0 ? "text-danger" : "text-success")">
                                             @t.Amount.ToString("C")
                                         </td>
@@ -276,7 +276,7 @@ else
             <label for="addCategory" class="form-label">Category</label>
             <InputSelect id="addCategory"
                          class="form-select"
-                         @bind-Value="newTransaction.Category">
+                         @bind-Value="newTransaction!.Category!.Name">
                 <option value="">Select a category</option>
                 @foreach (var category in availableCategories)
                 {
@@ -334,7 +334,7 @@ else
             <label for="editCategory" class="form-label">Category</label>
             <InputSelect id="editCategory"
                          class="form-select"
-                         @bind-Value="editTransaction.Category">
+                         @bind-Value="editTransaction.Category!.Name">
                 <option value="">Select a category</option>
                 @foreach (var category in availableCategories)
                 {
@@ -372,7 +372,7 @@ else
         <ul>
             <li><strong>Date:</strong> @deleteTarget.Date</li>
             <li><strong>Description:</strong> @deleteTarget.Description</li>
-            <li><strong>Category:</strong> @deleteTarget.Category</li>
+            <li><strong>Category:</strong> @deleteTarget.Category!.Name</li>
             <li><strong>Amount:</strong> @deleteTarget.Amount.ToString("C")</li>
         </ul>
 
@@ -603,25 +603,41 @@ else
         }
     }
 
-    private void ResetNewTransaction()
+    private async Task ResetNewTransaction()
     {
         if (user is null || selectedAccount is null) return;
+
+        // Get general category
+        var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user.Id).FirstOrDefaultAsync();
+
+        if (defaultCategory is null)
+        {
+            defaultCategory = new Category
+            {
+                UserId = user.Id,
+                Name = "General",
+                IsDefault = true
+            };
+
+            Context.Categories.Add(defaultCategory);
+            await Context.SaveChangesAsync();
+        }
 
         newTransaction = new UserTransaction
         {
             UserId = user.Id,
             AccountId = selectedAccount.Id,
             Date = DateOnly.FromDateTime(DateTime.Today),
-            Category = "General",
+            Category = defaultCategory,
             Amount = 0
         };
     }
 
-    private void OpenAddTransactionModal()
+    private async Task OpenAddTransactionModal()
     {
         if (selectedAccount is null) return;
         SuccessMessage = ErrorMessage = null;
-        ResetNewTransaction();
+        await ResetNewTransaction();
         IsAddTransactionModalOpen = true;
     }
 

@@ -20,11 +20,8 @@ namespace BudgetWise.Data
         [Required]
         public string UserId { get; set; } = string.Empty;
 
-        // Category that this budget applies to (e.g., "Groceries").
-        [Required]
-        [StringLength(50)]
-        public string Category { get; set; } = "General";
-
+        public int CategoryId { get; set; }
+        public virtual Category Category { get; set; } = null!;
         // Monthly spending limit for this category.
         [Required]
         [Column(TypeName = "decimal(18,2)")]
