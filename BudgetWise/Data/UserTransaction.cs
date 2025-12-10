@@ -35,10 +35,8 @@ namespace BudgetWise.Data
         [StringLength(100)]
         public string Description { get; set; } = string.Empty;
 
-        // Category is used for reports and budgets (Food, Rent, etc.).
-        [Required]
-        [StringLength(50)]
-        public string Category { get; set; } = "General";
+        public int CategoryId { get; set; }
+        public virtual Category Category { get; set; } = null!;
 
         // Money amount for this transaction.
         // We use decimal for currency (more precise than double).
