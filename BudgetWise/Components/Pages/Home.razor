@@ -577,7 +577,7 @@ else
         // Category pie chart
         if (CategoryBreakdown?.Count > 0)
         {
-            var labels = CategoryBreakdown.Select(c => c.Category).ToArray();
+            var labels = CategoryBreakdown.Select(c => c.Category!.Name).ToArray();
             var values = CategoryBreakdown.Select(c => c.Amount).ToArray();
 
             await JS.InvokeVoidAsync("renderCategoryChart", labels, values);
