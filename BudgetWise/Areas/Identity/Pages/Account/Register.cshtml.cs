@@ -19,6 +19,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using BudgetWise.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace BudgetWise.Areas.Identity.Pages.Account
 {
@@ -30,13 +32,15 @@ namespace BudgetWise.Areas.Identity.Pages.Account
         private readonly IUserEmailStore<User> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
+        private readonly ApplicationDbContext _context;
 
         public RegisterModel(
             UserManager<User> userManager,
             IUserStore<User> userStore,
             SignInManager<User> signInManager,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            ApplicationDbContext context)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -44,6 +48,7 @@ namespace BudgetWise.Areas.Identity.Pages.Account
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
+            _context = context;
         }
 
         /// <summary>
@@ -69,6 +74,28 @@ namespace BudgetWise.Areas.Identity.Pages.Account
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
+
+        private readonly List<string> CommonCategories = new()
+        {
+            "Groceries",
+            "Rent/Mortgage",
+            "Utilities",
+            "Transportation",
+            "Entertainment",
+            "Dining Out",
+            "Healthcare",
+            "Insurance",
+            "Education",
+            "Shopping",
+            "Personal Care",
+            "Subscriptions",
+            "Savings",
+            "Debt Payment",
+            "Auto Payments",
+            "Donations",
+            "General"
+        };
+
         public class InputModel
         {
             [Required]
@@ -131,19 +158,22 @@ namespace BudgetWise.Areas.Identity.Pages.Account
 
                 if (result.Succeeded)
                 {
+                   
                     _logger.LogInformation("User created a new account with password.");
 
-                    var userId = await _userManager.GetUserIdAsync(user);
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                    var callbackUrl = Url.Page(
-                        "/Account/ConfirmEmail",
-                        pageHandler: null,
-                        values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
-                        protocol: Request.Scheme);
+                    await EnsureDefaultCategoriesAsync();
 
-                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    var userId = await _userManager.GetUserIdAsync(user);
+                    // var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                    // code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                    // var callbackUrl = Url.Page(
+                    //     "/Account/ConfirmEmail",
+                    //     pageHandler: null,
+                    //     values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
+                    //     protocol: Request.Scheme);
+
+                    // await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+                    //     $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
                     if (_userManager.Options.SignIn.RequireConfirmedAccount)
                     {
@@ -186,6 +216,38 @@ namespace BudgetWise.Areas.Identity.Pages.Account
                 throw new NotSupportedException("The default UI requires a user store with email support.");
             }
             return (IUserEmailStore<User>)_userStore;
+        }
+
+        private async Task EnsureDefaultCategoriesAsync()
+        {
+            // Check if default categories exist, if not create them
+            var existingDefaults = await _context.Categories
+                .Where(c => c.IsDefault && c.UserId == null)
+                .ToListAsync();
+
+            var existingNames = existingDefaults.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var categoryName in CommonCategories)
+            {
+                if (!existingNames.Contains(categoryName))
+                {
+                    _context.Categories.Add(new Category
+                    {
+                        Name = categoryName,
+                        IsDefault = true,
+                        UserId = null // Default categories are available to all users
+                    });
+                }
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                // Ignore if categories already exist (race condition)
+            }
         }
     }
 }

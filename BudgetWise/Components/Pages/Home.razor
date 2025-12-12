@@ -658,19 +658,6 @@ else
         // Get general category
         var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user.Id).FirstOrDefaultAsync();
 
-        if (defaultCategory is null)
-        {
-            defaultCategory = new Category
-            {
-                UserId = user.Id,
-                Name = "General",
-                IsDefault = true
-            };
-
-            Context.Categories.Add(defaultCategory);
-            await Context.SaveChangesAsync();
-        }
-
         // Reset quick form
         QuickTransaction = new UserTransaction
         {
@@ -715,19 +702,6 @@ else
 
         // Get general category
         var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user!.Id).FirstOrDefaultAsync();
-
-        if (defaultCategory is null)
-        {
-            defaultCategory = new Category
-            {
-                UserId = user!.Id,
-                Name = "General",
-                IsDefault = true
-            };
-
-            Context.Categories.Add(defaultCategory);
-            await Context.SaveChangesAsync();
-        }
 
         CategoryBreakdown = expenses
             .GroupBy(t => t.Category ?? defaultCategory)

@@ -30,78 +30,6 @@
 }
 else
 {
-    <!-- BUDGET FORM -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <strong>@FormTitle</strong>
-        </div>
-        <div class="card-body">
-            <EditForm Model="@editBudget" OnValidSubmit="@SaveBudget">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
-
-                <div class="mb-3">
-                    <label class="form-label" for="categoryInput">Category</label>
-                    <InputSelect id="categoryInput"
-                                 class="form-select"
-                                 @bind-Value="editBudget.Category!.Name">
-                        <option value="">Select a category</option>
-                        <option value="Income">Income</option>
-                        <option value="Savings">Savings</option>
-                        @foreach (var category in availableCategories)
-                        {
-                            <option value="@category.Name">@category.Name</option>
-                        }
-                    </InputSelect>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <label class="form-label" for="monthSelect">Month</label>
-                        <InputSelect id="monthSelect"
-                                     class="form-select"
-                                     @bind-Value="editBudget.Month">
-                            <option value="">Select month</option>
-                            @foreach (var month in Months)
-                            {
-                                <option value="@month.Value">@month.Key</option>
-                            }
-                        </InputSelect>
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label" for="yearInput">Year</label>
-                        <InputNumber id="yearInput"
-                                     class="form-control"
-                                     @bind-Value="editBudget.Year" />
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label" for="limitInput">Monthly Limit ($)</label>
-                        <InputNumber id="limitInput"
-                                     class="form-control"
-                                     @bind-Value="editBudget.MonthlyLimit" />
-                    </div>
-                </div>
-
-                <button class="btn btn-primary"
-                        type="submit"
-                        disabled="@IsBusy">
-                    @(IsEditing ? "Update Budget" : "Add Budget")
-                </button>
-
-                @if (IsEditing)
-                {
-                    <button type="button"
-                            class="btn btn-secondary ms-2"
-                            @onclick="CancelEdit"
-                            disabled="@IsBusy">
-                        Cancel
-                    </button>
-                }
-            </EditForm>
-        </div>
-    </div>
 
     <!-- BUDGET LIST -->
     <div class="card">
@@ -163,6 +91,73 @@ else
     </div>
 }
 
+<SimpleModal IsOpen="@IsBudgetModalOpen" Title="" OnClose="CancelEdit">
+    <EditForm Model="@editBudget" OnValidSubmit="@SaveBudget">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label" for="categoryInput">Category</label>
+            <InputSelect id="categoryInput"
+                            class="form-select"
+                            @bind-Value="editBudget.Category!.Name">
+                <option value="">Select a category</option>
+                <option value="Income">Income</option>
+                <option value="Savings">Savings</option>
+                @foreach (var category in availableCategories)
+                {
+                    <option value="@category.Name">@category.Name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label class="form-label" for="monthSelect">Month</label>
+                <InputSelect id="monthSelect"
+                                class="form-select"
+                                @bind-Value="editBudget.Month">
+                    <option value="">Select month</option>
+                    @foreach (var month in Months)
+                    {
+                        <option value="@month.Value">@month.Key</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label" for="yearInput">Year</label>
+                <InputNumber id="yearInput"
+                                class="form-control"
+                                @bind-Value="editBudget.Year" />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label" for="limitInput">Monthly Limit ($)</label>
+                <InputNumber id="limitInput"
+                                class="form-control"
+                                @bind-Value="editBudget.MonthlyLimit" />
+            </div>
+        </div>
+
+        <button class="btn btn-primary"
+                type="submit"
+                disabled="@IsBusy">
+            @(IsEditing ? "Update Budget" : "Add Budget")
+        </button>
+
+        @if (IsEditing)
+        {
+            <button type="button"
+                    class="btn btn-secondary ms-2"
+                    @onclick="CancelEdit"
+                    disabled="@IsBusy">
+                Cancel
+            </button>
+        }
+    </EditForm>
+</SimpleModal>
+
 @code {
     private User? user;
     private List<Budget> budgets = new();
@@ -172,6 +167,7 @@ else
     private string FormTitle { get; set; } = "Add New Budget";
     private bool IsEditing { get; set; }
     private bool IsBusy { get; set; }
+    private bool IsBudgetModalOpen { get; set; }
     private string? ErrorMessage { get; set; }
     private string? SuccessMessage { get; set; }
 
@@ -213,7 +209,7 @@ else
 
         await LoadCategoriesAsync();
         await LoadBudgetsAsync();
-        await StartCreate();
+        @* await StartCreate(); *@
     }
 
     private async Task LoadCategoriesAsync()
@@ -247,6 +243,7 @@ else
 
     private async Task StartCreate()
     {
+        IsBudgetModalOpen = true;
         IsEditing = false;
         FormTitle = "Add New Budget";
         SuccessMessage = ErrorMessage = null;
@@ -255,19 +252,6 @@ else
 
         // Get general category
         var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user!.Id).FirstOrDefaultAsync();
-
-        if (defaultCategory is null)
-        {
-            defaultCategory = new Category
-            {
-                UserId = user!.Id,
-                Name = "General",
-                IsDefault = true
-            };
-
-            Context.Categories.Add(defaultCategory);
-            await Context.SaveChangesAsync();
-        }
 
         editBudget = new Budget
         {
@@ -281,19 +265,12 @@ else
 
     private void StartEdit(Budget b)
     {
+        IsBudgetModalOpen = true;
         IsEditing = true;
         FormTitle = $"Edit Budget – {b.Category!.Name}";
         SuccessMessage = ErrorMessage = null;
 
-        editBudget = new Budget
-        {
-            Id = b.Id,
-            UserId = b.UserId,
-            Category = b.Category,
-            Month = b.Month,
-            Year = b.Year,
-            MonthlyLimit = b.MonthlyLimit
-        };
+        editBudget = b;
     }
 
     private async Task SaveBudget()
@@ -326,7 +303,7 @@ else
             await LoadBudgetsAsync();
 
             SuccessMessage = IsEditing ? "Budget updated!" : "Budget added!";
-            await StartCreate();
+            @* await StartCreate(); *@
         }
         catch (DbUpdateException)
         {
@@ -340,12 +317,14 @@ else
         finally
         {
             IsBusy = false;
+            IsBudgetModalOpen = false;
         }
     }
 
     private async Task CancelEdit()
     {
-        await StartCreate();
+        IsBudgetModalOpen = false;
+        @* await StartCreate(); *@
     }
 
     private async Task ConfirmDelete(Budget b)
@@ -367,6 +346,7 @@ else
         catch (Exception ex)
         {
             ErrorMessage = $"Error deleting: {ex.Message}";
+            IsBudgetModalOpen = false;
         }
     }
 

@@ -34,19 +34,19 @@
 }
 else
 {
-    <div class="mb-3">
-        <button class="btn btn-primary" @onclick="OpenAddAccountModal">
-            Add Account
-        </button>
-    </div>
-
     @if (selectedAccount is null)
     {
+        <div class="mb-3">
+            <button class="btn btn-primary" @onclick="OpenAddAccountModal">
+                Add Account
+            </button>
+        </div>
+
         <!-- Accounts List View -->
         <div class="row">
             <!-- Assets Section -->
             <div class="col-md-6 mb-4">
-                <div class="card">
+                <div class="card h-100">
                     <div class="card-header bg-success text-white">
                         <h5 class="mb-0">Assets</h5>
                     </div>
@@ -80,7 +80,7 @@ else
 
             <!-- Debts Section -->
             <div class="col-md-6 mb-4">
-                <div class="card">
+                <div class="card h-100">
                     <div class="card-header bg-danger text-white">
                         <h5 class="mb-0">Debts</h5>
                     </div>
@@ -117,53 +117,72 @@ else
     {
         <!-- Account Details View -->
         <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="mb-0">@selectedAccount.Name</h5>
-                    <small class="text-muted">@selectedAccount.Type</small>
-                </div>
-                <div>
-                    <button class="btn btn-sm btn-outline-secondary me-2" @onclick="BackToAccounts">
-                        Back to Accounts
-                    </button>
-                    <ImportTransactionModal User="@user" ButtonText="Import transactions from .csv" ButtonClass="btn btn-sm btn-outline-primary" Account=selectedAccount />
-                    <button class="btn btn-sm btn-outline-primary" @onclick="OpenAddTransactionModal">
-                        Add Transaction
-                    </button>
+            <div class="card-header justify-content-between w-100">
+                <div class="row w-100 align-items-center m-0 p-0">
+                    <div class="d-flex flex-column col-8">
+                        <h5 class="mb-0">@selectedAccount.Name</h5>
+                        <small class="text-muted">@selectedAccount.Type</small>
+                    </div>
+                    <div class="col-4 align-items-end">
+                        <button id="back-to-accounts"
+                            class="btn btn-sm btn-outline-secondary d-block w-100"
+                            @onclick="BackToAccounts">
+                            Back
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <strong>Current Balance:</strong>
-                        <div class="h4 @(selectedAccount.CurrentBalance >= 0 ? "text-success" : "text-danger")">
-                            @selectedAccount.CurrentBalance.ToString("C")
+                <div class="align-items-center justify-content-around">
+                    <div class="row">
+                        <div class="col-5">
+                            <strong>Current Balance:</strong>
+                            <div class="h4 @(selectedAccount.CurrentBalance >= 0 ? "text-success" : "text-danger")">
+                                @selectedAccount.CurrentBalance.ToString("C")
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-4">
-                        <strong>Starting Balance:</strong>
-                        <div>@selectedAccount.StartingBalance.ToString("C")</div>
-                    </div>
-                    <div class="col-md-4">
-                        <strong>Total Transactions:</strong>
-                        <div>@accountTransactions.Count</div>
+                        <div class="col-md-5 col-4">
+                            <strong>Starting Balance:</strong>
+                            <div>@selectedAccount.StartingBalance.ToString("C")</div>
+                        </div>
+                        <div class="col-md-2 col-3">
+                            <strong id="total-transactions" aria-label="Total transactions"></strong>
+                            <div>@accountTransactions.Count</div>
+                        </div>
                     </div>
                 </div>
 
                 <hr />
 
-                <h6>Transactions</h6>
-                @if (accountTransactions.Count == 0)
-                {
-                    <p class="text-muted">No transactions yet.</p>
-                }
-                else
-                {
-                    @foreach (var t in accountTransactions)
+                <div class="align-items-center">
+                    <div
+                        class="row d-flex flex-row justify-content-between align-items-center border-bottom border-bottom border-dark-subtle m-0 pb-2 mb-2">
+                        <h5 class="col-lg-10 col-sm-5 col-6">Transactions</h5>
+                        <div class="d-flex flex-row col-lg-2 col-sm-7 col-6">
+                            <ImportTransactionModal User="@user" ButtonText="Import" UserCategories="@availableCategories" UserAccounts="@allAccounts" ButtonClass="btn btn-sm btn-outline-primary d-block d-md-inline w-100 my-2 my-0-md mx-1" Account=selectedAccount />
+                            <button id="add-transaction" class="btn btn-sm btn-outline-primary d-block d-md-inline w-100 my-2 my-0-md mx-1"
+                                @onclick="OpenAddTransactionModal">
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <strong class="col-5">Description</strong>
+                        <strong class="col-md-5 col-4">Amount</strong>
+                        <strong class="col-md-2 col-3">Details</strong>
+                    </div>
+                    @if (accountTransactions.Count == 0)
                     {
-                        <TransactionDisplay User="@user" Transaction="@t" Categories="@availableCategories" Accounts="@allAccounts" />
+                        <p class="text-muted">No transactions yet.</p>
                     }
-                }
+                    else
+                    {
+                        @foreach (var t in accountTransactions)
+                        {
+                            <TransactionDisplay User="@user" Transaction="@t" Categories="@availableCategories" Accounts="@allAccounts" />
+                        }
+                    }
+                </div> 
             </div>
         </div>
     }
@@ -576,19 +595,6 @@ else
 
         // Get general category
         var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user.Id).FirstOrDefaultAsync();
-
-        if (defaultCategory is null)
-        {
-            defaultCategory = new Category
-            {
-                UserId = user.Id,
-                Name = "General",
-                IsDefault = true
-            };
-
-            Context.Categories.Add(defaultCategory);
-            await Context.SaveChangesAsync();
-        }
 
         newTransaction = new UserTransaction
         {
