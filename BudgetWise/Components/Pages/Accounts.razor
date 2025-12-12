@@ -5,6 +5,7 @@
 @using Microsoft.EntityFrameworkCore
 @attribute [StreamRendering]
 @attribute [Authorize]
+@rendermode InteractiveServer
 
 <PageTitle>Accounts</PageTitle>
 
@@ -119,11 +120,11 @@ else
         <div class="card mb-4">
             <div class="card-header justify-content-between w-100">
                 <div class="row w-100 align-items-center m-0 p-0">
-                    <div class="d-flex flex-column col-8">
+                    <div class="d-flex flex-column col-lg-10 col-8">
                         <h5 class="mb-0">@selectedAccount.Name</h5>
                         <small class="text-muted">@selectedAccount.Type</small>
                     </div>
-                    <div class="col-4 align-items-end">
+                    <div class="col-lg-2 col-4 align-items-end">
                         <button id="back-to-accounts"
                             class="btn btn-sm btn-outline-secondary d-block w-100"
                             @onclick="BackToAccounts">
@@ -179,7 +180,7 @@ else
                     {
                         @foreach (var t in accountTransactions)
                         {
-                            <TransactionDisplay User="@user" Transaction="@t" Categories="@availableCategories" Accounts="@allAccounts" />
+                            <TransactionDisplay User="@user" Transaction="@t" Categories="@availableCategories" Accounts="@allAccounts" Callback="@OnTransactionDisplayChanged" />
                         }
                     }
                 </div> 
@@ -766,6 +767,20 @@ else
         {
             IsBusy = false;
         }
+    }
+
+    // Refresh page when quick transaction is modified
+    private async Task OnTransactionDisplayChanged()
+    {
+        if (selectedAccount != null)
+        {
+            await LoadAccountTransactions();
+            await RecalculateAccountBalance(selectedAccount.Id);
+            await LoadAccountsAsync();
+        }
+        
+        StateHasChanged();
+        return;
     }
 }
 

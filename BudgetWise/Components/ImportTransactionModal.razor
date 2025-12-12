@@ -18,14 +18,14 @@
 </button>
 
 @* Import CSV Model *@
-<SimpleModal IsOpen="@IsImportModalOpen" Title="Import Transactions" OnClose="CloseImportModal" SizeClass="xl">
+<SimpleModal IsOpen="@IsImportModalOpen" Title="Import Transactions" OnClose="CloseImportModal" SizeClass="lg">
     @if (!string.IsNullOrEmpty(ErrorMessage))
     {
         <div class="alert alert-danger" role="alert">@ErrorMessage</div>
     }
 
     <div class="pb-3 row d-flex justify-content-between">
-        <div class="col-6">
+        <div class="col-md-4 col-6">
             <InputFile id="fileInput" class="visually-hidden" @key=@InputFileId accept=".csv" OnChange="OnInputFileChange" />
             <label for="fileInput" class="btn btn-outline-secondary text-truncate w-100">@InputFileMessage</label>
         </div>
@@ -55,7 +55,7 @@
             {
                 @foreach (var t in ImportedTransactions)
                 {
-                    <TransactionDisplay User="@User" Transaction="@t" Categories="@UserCategories" Accounts="@UserAccounts"  />
+                    <TransactionDisplay User="@User" DontShowDelete=true Transaction="@t" Categories="@UserCategories" Accounts="@UserAccounts" Callback="@OnTransactionDisplayChanged" />
                 }
             }
         </div>
@@ -191,17 +191,14 @@
 
                 if (credit >= 0 && !values[credit].IsNullOrEmpty())
                 {
-                    Console.WriteLine(("C", credit > 0 ? values[credit] : ""));
                     foundAmount = Decimal.Parse(values[credit]);
                 }
                 else if (debit >= 0 && !values[debit].IsNullOrEmpty())
                 {
-                    Console.WriteLine(("D", debit > 0 ? values[debit] : ""));
                     foundAmount = -1 * Math.Abs(Decimal.Parse(values[debit]));
                 }
                 else if (amount >= 0 && !values[amount].IsNullOrEmpty())
                 {
-                    Console.WriteLine(("A", amount > 0 ? values[amount] : ""));
                     foundAmount = Decimal.Parse(values[amount]);
                 }
 
@@ -234,6 +231,7 @@
                         Category = foundCategory,
                         Amount = foundAmount,
                         AccountId = Account.Id,
+                        Account = Account,
                     };
 
                     ImportedTransactions.Add(transaction);
@@ -289,5 +287,12 @@
     {
         IsImportModalOpen = false;
         DisplayImportedRows = false;
+    }
+
+    // Refresh page when quick transaction is modified
+    private Task OnTransactionDisplayChanged()
+    {
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 }

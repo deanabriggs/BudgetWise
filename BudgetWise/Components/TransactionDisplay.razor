@@ -81,11 +81,12 @@
             </div>
 
             <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-secondary me-2" @onclick="StartEdit" disabled="@isBusy">
+                <button type="button" class="btn btn-secondary" @onclick="StartEdit" disabled="@isBusy"
+                    aria-label="Stop editing transaction">
                     Cancel
                 </button>
 
-                <button type="submit" class="btn btn-primary" disabled="@isBusy">
+                <button type="submit" class="btn btn-primary ms-3" disabled="@isBusy" aria-label="Save transaction changes">
                     @(isBusy ? "Saving..." : "Save")
                 </button>
             </div>
@@ -134,7 +135,16 @@
         </div>
 
         <div class="d-flex justify-content-end">
-            <button type="button" class="btn btn-primary" disabled="@isBusy" @onclick="@StartEdit">
+            @if (DontShowDelete != true)
+            {
+                <button type="button" class="btn btn-outline-danger" disabled="@isBusy" aria-label="Delete transaction"
+                    @onclick="@DeleteTransaction">
+                    Delete
+                </button>
+            }
+
+            <button type="button" class="btn btn-primary ms-3" disabled="@isBusy" aria-label="Edit transaction"
+                @onclick="@StartEdit">
                 Edit
             </button>
         </div>
@@ -155,7 +165,10 @@
     public required List<Account> Accounts { get; set; } = new List<Account>();
 
     [Parameter]
-    public bool ShowDate { get; set; } = false;
+    public EventCallback Callback { get; set; }
+
+    [Parameter]
+    public bool? DontShowDelete { get; set; }
 
     private string title => areDetailsOpen ? (isEditing ? $"Editing Transaction - {Transaction.Description}" : $"Viewing Transaction - {Transaction.Description}") : "";
     private bool areDetailsOpen = false;
@@ -177,13 +190,38 @@
             @* areDetailsOpen = false; *@
             isEditing = false;
             isBusy = false;
+            await TriggerCallback();
         }
     }
 
-    private void StartEdit()
+    private async Task DeleteTransaction()
+    {
+        if (User is null)
+        {
+            @* ErrorMessage = "You must be logged in to delete a transaction."; *@
+            return;
+        }
+        try
+        {
+            Context.UserTransactions.Remove(Transaction);
+            await Context.SaveChangesAsync();
+        }
+        catch (Exception)
+        {
+
+        }
+        finally {
+            areDetailsOpen = false;
+            isEditing = false;
+            isBusy = false;
+            await TriggerCallback();
+        }
+    }
+
+    private async Task StartEdit()
     {
         isEditing = !isEditing;
-        StateHasChanged();
+        await TriggerCallback();
     }
 
     private void OpenDetails()
@@ -197,5 +235,13 @@
     {
         areDetailsOpen = false;
         isEditing = false;
+    }
+
+    private async Task TriggerCallback()
+    {
+        if (Callback.HasDelegate == true)
+        {
+            await Callback.InvokeAsync();
+        }
     }
 }
