@@ -3,7 +3,6 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
-@using BudgetWise.Components.Shared
 @attribute [StreamRendering]
 @attribute [Authorize]
 
@@ -160,42 +159,10 @@ else
                 }
                 else
                 {
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Description</th>
-                                    <th>Category</th>
-                                    <th class="text-end">Amount</th>
-                                    <th class="text-end">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var t in accountTransactions)
-                                {
-                                    <tr>
-                                        <td>@t.Date.ToString("yyyy-MM-dd")</td>
-                                        <td>@t.Description</td>
-                                        <td>@t.Category!.Name</td>
-                                        <td class="text-end @(t.Amount < 0 ? "text-danger" : "text-success")">
-                                            @t.Amount.ToString("C")
-                                        </td>
-                                        <td class="text-end">
-                                            <button class="btn btn-sm btn-outline-secondary me-2"
-                                                    @onclick="@(() => OpenEditTransactionModal(t))">
-                                                Edit
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger"
-                                                    @onclick="@(() => OpenDeleteTransactionModal(t))">
-                                                Delete
-                                            </button>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+                    @foreach (var t in accountTransactions)
+                    {
+                        <TransactionDisplay User="@user" Transaction="@t" Categories="@availableCategories" Accounts="@allAccounts" />
+                    }
                 }
             </div>
         </div>

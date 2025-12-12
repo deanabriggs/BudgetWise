@@ -37,7 +37,8 @@ else
         <div class="col-md-12">
             @if (!string.IsNullOrWhiteSpace(MotivationalMessage))
             {
-                <div class="alert alert-success py-2 px-3 mb-0 small">
+                <div
+                    class="alert @(Balance == 0 ? "alert-warning" : (Balance > 0 ? "alert-success" : "alert-danger")) py-2 px-3 mb-0 small">
                     @MotivationalMessage
                 </div>
             }
@@ -45,9 +46,9 @@ else
     </div>
 
     <!-- KPI Row -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4 d-md-flex">
         <!-- Income -->
-        <div class="col-md-4">
+        <div class="col-md-4 flex-fill">
             <div class="card shadow-sm kpi-card kpi-clickable"
                  @onclick="@(() => NavigateTo("/budgets"))"
                  style="cursor:pointer;">
@@ -73,8 +74,8 @@ else
         </div>
 
         <!-- Expenses -->
-        <div class="col-md-4">
-            <div class="card shadow-sm kpi-card kpi-clickable"
+        <div class="col-md-4 d-md-flex">
+            <div class="card shadow-sm kpi-card kpi-clickable flex-fill"
                  @onclick="@(() => NavigateTo("/accounts"))"
                  style="cursor:pointer;">
                 <div class="card-body">
@@ -99,8 +100,8 @@ else
         </div>
 
         <!-- Balance -->
-        <div class="col-md-4">
-            <div class="card shadow-sm kpi-card">
+        <div class="col-md-4 d-md-flex">
+            <div class="card shadow-sm kpi-card flex-fill">
                 <div class="card-body">
                     <div class="kpi-label">Balance (this month)</div>
                     <div class="kpi-value @(Balance >= 0 ? "text-success" : "text-danger")">
@@ -113,8 +114,8 @@ else
 
     <!-- Totals + Quick Net Worth -->
     <div class="row g-3 mb-4">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
+        <div class="col-md-8 d-md-flex">
+            <div class="card shadow-sm flex-fill">
                 <div class="card-header"><strong>Totals (@CurrentMonthName @CurrentYear)</strong></div>
                 <div class="card-body p-0">
                     <table class="table mb-0">
@@ -136,8 +137,8 @@ else
         </div>
 
         <!-- Net worth quick estimate -->
-        <div class="col-md-4">
-            <div class="card shadow-sm">
+        <div class="col-md-4 d-md-flex">
+            <div class="card shadow-sm flex-fill">
                 <div class="card-header"><strong>Net Worth</strong></div>
                 <div class="card-body">
                     <strong>Total Assets</strong>
@@ -162,9 +163,9 @@ else
     </div>
 
     <!-- Budget + Savings Goals -->
-    <div class="row g-3 mb-4">
-        <div class="col-lg-8">
-            <div class="card shadow-sm">
+    <div class="row g-3 mb-4 d-md-flex">
+        <div class="col-lg-8 d-md-flex">
+            <div class="card shadow-sm flex-fill">
                 <div class="card-header"><strong>Budgeting (@CurrentMonthName @CurrentYear)</strong></div>
                 <div class="card-body p-0">
                     @if (BudgetSummaries.Count == 0)
@@ -202,8 +203,8 @@ else
         </div>
 
         <!-- Savings Goals -->
-        <div class="col-lg-4">
-            <div class="card shadow-sm kpi-clickable"
+        <div class="col-lg-4 d-md-flex">
+            <div class="card shadow-sm kpi-clickable flex-fill"
                  @onclick="@(() => NavigateTo("/budgets"))"
                  style="cursor:pointer;">
                 <div class="card-header d-flex justify-content-between">
@@ -244,9 +245,9 @@ else
     </div>
 
     <!-- Category Breakdown + Daily Trend (with charts) -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4 d-md-flex">
         <!-- Category Breakdown + Pie Chart -->
-        <div class="col-lg-6">
+        <div class="col-lg-6 flex-fill">
             <div class="card shadow-sm">
                 <div class="card-header"><strong>Spending by Category</strong></div>
                 <div class="card-body">
@@ -280,8 +281,8 @@ else
         </div>
 
         <!-- Daily Trend + Line Chart -->
-        <div class="col-lg-6">
-            <div class="card shadow-sm">
+        <div class="col-lg-6 d-md-flex">
+            <div class="card shadow-sm flex-fill">
                 <div class="card-header"><strong>Daily Income & Expense Trend</strong></div>
                 <div class="card-body">
                     @if (DaySummaries.Count == 0)
@@ -321,9 +322,9 @@ else
     </div>
 
     <!-- Quick Add Transaction + Recent -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4 d-md-flex ">
         <!-- Quick Add -->
-        <div class="col-lg-4">
+        <div class="col-lg-4 flex-fill">
             <div class="card shadow-sm">
                 <div class="card-header"><strong>Quick Add Transaction</strong></div>
                 <div class="card-body">
@@ -376,8 +377,8 @@ else
         </div>
 
         <!-- Recent -->
-        <div class="col-lg-8">
-            <div class="card shadow-sm">
+        <div class="col-lg-8 d-md-flex ">
+            <div class="card shadow-sm flex-fill">
                 <div class="card-header d-flex justify-content-between">
                     <strong>Recent Transactions</strong>
                     <a href="/accounts" class="small">View all</a>
@@ -393,7 +394,11 @@ else
                     }
                     else
                     {
-                        <table class="table table-sm">
+                        @foreach (var t in FilteredTransactions)
+                        {
+                            <TransactionDisplay User="@user" Transaction="@t" Categories="@availableCategories" Accounts="@UserAccounts" />
+                        }
+                        @* <table class="table table-sm">
                             <thead>
                                 <tr>
                                     <th>Date</th>
@@ -415,7 +420,7 @@ else
                                     </tr>
                                 }
                             </tbody>
-                        </table>
+                        </table> *@
                     }
                 </div>
             </div>
@@ -709,7 +714,7 @@ else
         var total = Math.Abs(expenses.Sum(t => t.Amount));
 
         // Get general category
-        var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user.Id).FirstOrDefaultAsync();
+        var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user!.Id).FirstOrDefaultAsync();
 
         if (defaultCategory is null)
         {

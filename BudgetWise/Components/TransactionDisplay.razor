@@ -1,0 +1,173 @@
+@using BudgetWise.Data
+@using Microsoft.EntityFrameworkCore
+@using System.Globalization
+@inject ApplicationDbContext Context
+@attribute [StreamRendering]
+
+@* 
+    Simple component for displaying transaction details for mobile users
+    This only requires two object to work: the user, and the transaction to display.
+    This simplifies transaction listings by only displaying the description and amount of the transaction
+    and displayed a button which can be clicked to open the details of the transaction.
+ *@
+
+<div class="container-fluid p-0">
+    <div class="row align-items-center justify-content-between mx-1 p-2 border-bottom border-top border-dark-subtle w-100">
+        <div class="col-md-5 col-4">
+            <span>@Transaction.Description</span>
+        </div>
+
+        <div class="col-md-5 col-4">
+            @{
+                NumberFormatInfo numberFormat = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
+                numberFormat.CurrencyNegativePattern = 1;
+            }
+            <span class="@(Transaction.Amount < 0 ? "text-danger" : "text-success")">
+                @Transaction.Amount.ToString("C", numberFormat)
+            </span>
+        </div>
+
+        <div class="col-md-2 col-3">
+            <button class="btn btn-primary w-100 p-md-2 p-0 m-md-1 m-0" @onclick="OpenDetails">Details</button>
+        </div>
+    </div>
+</div>
+
+<SimpleModal IsOpen="@areDetailsOpen" Title="@title" OnClose="CloseModal">
+    @if (isEditing)
+    {
+        <EditForm Model="@Transaction" OnValidSubmit="@SaveTransaction">
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <InputText class="form-control" id="description" placeholder="description" @bind-Value="@Transaction.Description" />
+            </div>
+            
+            <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="@Transaction.CategoryId">
+                <option value="">Select a category</option>
+                @foreach (var category in Categories)
+                {
+                    <option value="@category.Id">@category.Name</option>
+                }
+            </InputSelect>
+
+            <div class="mb-3">
+                <label for="amount" class="form-label">Amount</label>
+                <InputNumber class="form-control" id="amount" placeholder="amount" @bind-Value="@Transaction.Amount" />
+            </div>
+
+            <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="@Transaction.AccountId">
+                <option value="">Select an Account</option>
+                @foreach (var account in Accounts)
+                {
+                    <option value="@account.Id">@account.Name</option>
+                }
+            </InputSelect>
+
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-secondary me-2" @onclick="StartEdit" disabled="@isBusy">
+                    Cancel
+                </button>
+
+                <button type="submit" class="btn btn-primary" disabled="@isBusy">
+                    @(isBusy ? "Saving..." : "Save")
+                </button>
+            </div>
+        </EditForm>
+    }
+    else
+    {
+        <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <div class="form-control" id="description">
+                    @Transaction.Description
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="category" class="form-label">Category</label>
+                <div class="form-control" id="category">
+                    @Transaction.Category.Name
+                </div>
+            </div>
+
+            <div class="mb-3">
+                @{
+                    NumberFormatInfo numberFormat = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
+                    numberFormat.CurrencyNegativePattern = 1;
+                }
+
+                <label for="amount" class="form-label">Amount</label>
+                <div class="form-control @(Transaction.Amount < 0 ? "text-danger" : "text-success")" id="amount">
+                    @Transaction.Amount.ToString("C", numberFormat)
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="account" class="form-label">Account</label>
+                <div class="form-control" id="account">
+                    @Transaction.Account.Name
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-primary" disabled="@isBusy" @onclick="@StartEdit">
+                    Edit
+                </button>
+            </div>
+    }
+</SimpleModal>
+
+@code {
+    [Parameter]
+    public required User User { get; set; }
+    
+    [Parameter]
+    public required UserTransaction Transaction { get; set; }
+    
+    [Parameter]
+    public required List<Category> Categories { get; set; } = new List<Category>();
+
+    [Parameter]
+    public required List<Account> Accounts { get; set; } = new List<Account>();
+
+    private string title = string.Empty;
+    private bool areDetailsOpen = false;
+    private bool isBusy = false;
+    private bool isEditing = false;
+
+    private async Task SaveTransaction()
+    {
+        try {
+            isBusy = true;
+            await Context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+
+        }
+        finally
+        {
+            @* areDetailsOpen = false; *@
+            isEditing = false;
+            isBusy = false;
+        }
+    }
+
+    private void StartEdit()
+    {
+        isEditing = !isEditing;
+        StateHasChanged();
+    }
+
+    private void OpenDetails()
+    {
+        areDetailsOpen = true;
+        isEditing = false;
+    }
+
+    private void CloseModal()
+    {
+        areDetailsOpen = false;
+        isEditing = false;
+    }
+}

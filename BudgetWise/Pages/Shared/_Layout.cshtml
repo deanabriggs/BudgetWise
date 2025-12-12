@@ -31,15 +31,22 @@
 
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom mb-3">
+        <nav class="navbar navbar-expand-lg navbar-light my-lg-5 bg-light container shadow-lg mb-3 px-3">
             <div class="container">
-                <a class="navbar-brand" href="/">BudgetWise</a>
+                <a class="navbar-brand fw-bold" href="/">BudgetWise</a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
+                <div class="collapse navbar-collapse" id="navMenu">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item"><a class="nav-link text-dark" href="/">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link text-dark" href="/accounts">Accounts</a></li>
+                        <li class="nav-item"><a class="nav-link text-dark" href="/budgets">Budgets</a></li>
+                        <li class="nav-item"><a class="nav-link text-dark" href="/categories">Categories</a></li>
+                    </ul>
+
                     @{
                         var result = Engine.FindView(ViewContext, "_LoginPartial", false);
                     }
@@ -49,6 +56,10 @@
                         await Html.RenderPartialAsync("_LoginPartial");
                     }
                 </div>
+
+                @* <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button> *@
             </div>
         </nav>
     </header>

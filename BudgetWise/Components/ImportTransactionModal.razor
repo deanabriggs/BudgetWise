@@ -1,3 +1,4 @@
+@rendermode InteractiveServer
 @using BudgetWise.Data
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
@@ -18,6 +19,11 @@
 
 @* Import CSV Model *@
 <SimpleModal IsOpen="@IsImportModalOpen" Title="Import Transactions" OnClose="CloseImportModal" SizeClass="xl">
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@ErrorMessage</div>
+    }
+
     <div>
         <InputFile id="fileInput" class="visually-hidden" @key=@InputFileId accept=".csv" OnChange="OnInputFileChange" />
         <label for="fileInput" class="btn btn-secondary">@InputFileMessage</label>
@@ -85,6 +91,7 @@
     private string InputFileMessage = "Choose .csv file";
     private bool IsBusy = false;
     private string? ErrorMessage { get; set; }
+
 
     private void OpenImportModal()
     {
@@ -254,6 +261,8 @@
     {
         if (User is null || ImportedTransactions.Count == 0) return;
 
+        ErrorMessage = null;
+
         try {
 
             foreach (var transaction in ImportedTransactions)
@@ -270,6 +279,7 @@
         finally 
         {
             await Context.SaveChangesAsync();
+            StateHasChanged();
             CloseImportModal();
         }
     }
