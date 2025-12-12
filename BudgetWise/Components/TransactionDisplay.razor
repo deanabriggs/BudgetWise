@@ -168,9 +168,9 @@
             isBusy = true;
             await Context.SaveChangesAsync();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-
+            CloseModal();
         }
         finally
         {

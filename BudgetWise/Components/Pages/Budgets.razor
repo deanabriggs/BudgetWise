@@ -250,17 +250,32 @@ else
 
         var now = DateTime.Now;
 
-        // Get general category
-        var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user!.Id).FirstOrDefaultAsync();
-
-        editBudget = new Budget
+        try 
         {
-            UserId = user!.Id,
-            Category = defaultCategory,
-            Month = now.Month,
-            Year = now.Year,
-            MonthlyLimit = 0
-        };
+            // Get general category
+            var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId ==
+            user!.Id).FirstOrDefaultAsync();
+
+            if (defaultCategory is null)
+            {
+                throw new Exception("Could not find the general category");
+            }
+
+            editBudget = new Budget
+            {
+                UserId = user!.Id,
+                Category = defaultCategory,
+                Month = now.Month,
+                Year = now.Year,
+                MonthlyLimit = 0
+            };
+        }
+        catch (Exception ex) 
+        {
+            ErrorMessage = $"Error creating: {ex.Message}";
+            IsBudgetModalOpen = false;
+            IsBusy = false;
+        }
     }
 
     private void StartEdit(Budget b)
@@ -321,7 +336,7 @@ else
         }
     }
 
-    private async Task CancelEdit()
+    private void CancelEdit()
     {
         IsBudgetModalOpen = false;
         @* await StartCreate(); *@

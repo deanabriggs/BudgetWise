@@ -19,7 +19,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
-using BudgetWise.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetWise.Areas.Identity.Pages.Account
@@ -161,6 +160,7 @@ namespace BudgetWise.Areas.Identity.Pages.Account
                    
                     _logger.LogInformation("User created a new account with password.");
 
+                    // Seed user's category list upon creation
                     await EnsureDefaultCategoriesAsync();
 
                     var userId = await _userManager.GetUserIdAsync(user);

@@ -593,17 +593,35 @@ else
     {
         if (user is null || selectedAccount is null) return;
 
-        // Get general category
-        var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user.Id).FirstOrDefaultAsync();
-
-        newTransaction = new UserTransaction
+        try
         {
-            UserId = user.Id,
-            AccountId = selectedAccount.Id,
-            Date = DateOnly.FromDateTime(DateTime.Today),
-            Category = defaultCategory,
-            Amount = 0
-        };
+            // Get general category
+            var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId ==
+            user.Id).FirstOrDefaultAsync();
+
+            if (defaultCategory is null)
+            {
+                throw new Exception("Could not find the general category");
+            }
+
+            newTransaction = new UserTransaction
+            {
+                UserId = user.Id,
+                AccountId = selectedAccount.Id,
+                Date = DateOnly.FromDateTime(DateTime.Today),
+                Category = defaultCategory,
+                Amount = 0
+            };
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error Resetting: {ex.Message}";
+            IsAddAccountModalOpen = false;
+            IsAddTransactionModalOpen = false;
+            IsDeleteTransactionModalOpen = false;
+            IsEditTransactionModalOpen = false;
+            IsBusy = false;
+        }
     }
 
     private async Task OpenAddTransactionModal()

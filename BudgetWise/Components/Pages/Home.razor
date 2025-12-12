@@ -649,23 +649,36 @@ else
         await LoadLastMonthComparison();
         BuildMotivationalMessage();
 
-        // Recent transactions
-        RecentTransactions = transactions
+        try
+        {
+            // Recent transactions
+            RecentTransactions = transactions
             .OrderByDescending(t => t.Date)
             .Take(10)
             .ToList();
 
-        // Get general category
-        var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user.Id).FirstOrDefaultAsync();
+            // Get general category
+            var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId ==
+            user.Id).FirstOrDefaultAsync();
 
-        // Reset quick form
-        QuickTransaction = new UserTransaction
+            if (defaultCategory is null)
+            {
+                throw new Exception("Could not find general category");
+            }
+
+            // Reset quick form
+            QuickTransaction = new UserTransaction
+            {
+                UserId = user.Id,
+                AccountId = QuickTransaction.AccountId,
+                Date = DateOnly.FromDateTime(DateTime.Today),
+                Category = defaultCategory,
+            };
+        }
+        catch (Exception ex)
         {
-            UserId = user.Id,
-            AccountId = QuickTransaction.AccountId,
-            Date = DateOnly.FromDateTime(DateTime.Today),
-            Category = defaultCategory,
-        };
+            ErrorMessage = $"Error Loading: {ex.Message}";
+        }
     }
 
     private void BuildBudgetSummaries(List<Budget> budgets, List<UserTransaction> transactions)
@@ -700,10 +713,17 @@ else
 
         var total = Math.Abs(expenses.Sum(t => t.Amount));
 
-        // Get general category
-        var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user!.Id).FirstOrDefaultAsync();
+        try {
+            // Get general category
+            var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId ==
+            user!.Id).FirstOrDefaultAsync();
 
-        CategoryBreakdown = expenses
+            if (defaultCategory is null)
+            {
+                throw new Exception("Could not get the general category");
+            }
+
+            CategoryBreakdown = expenses
             .GroupBy(t => t.Category ?? defaultCategory)
             .Select(g =>
             {
@@ -717,6 +737,11 @@ else
             })
             .OrderByDescending(c => c.Amount)
             .ToList();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error Loading: {ex.Message}";
+        }
     }
 
     private void BuildDaySummaries(List<UserTransaction> transactions, List<Income> incomes)
