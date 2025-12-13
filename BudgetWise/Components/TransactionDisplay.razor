@@ -1,6 +1,7 @@
 @using BudgetWise.Data
 @using Microsoft.EntityFrameworkCore
 @using System.Globalization
+@using System.Linq
 
 @inject ApplicationDbContext Context
 
@@ -14,29 +15,40 @@
  *@
 
 <div class="container-fluid">
-    <div
-        class="row align-items-center justify-content-between border-bottom border-top border-dark-subtle">
-        <div class="col-5 d-flex flex-column text-truncate">
-            <span class="text-truncate">@Transaction.Description</span>
-            <span class="text-truncate">@Transaction.Date</span>
+    <div class="row align-items-center border-bottom border-top border-dark-subtle py-2">
+        <div class="col-md-2 col-3 text-truncate">
+            @if (Transaction.Account != null)
+            {
+                <span class="text-truncate">@Transaction.Account.Name</span>
+            }
+            else
+            {
+                <span class="text-truncate text-muted">(No account)</span>
+            }
         </div>
-
-        <div class="col-5 d-flex flex-column text-truncate">
+        <div class="col-md-1 col-3 text-truncate">
+            <span class="text-truncate">@Transaction.Date.ToString("M/dd")</span>
+        </div>
+        <div class="col-md-2 col-4 text-truncate">
+            <span class="text-truncate">@(Transaction.Source ?? "(No source)")</span>
+        </div>
+        <div class="col-md-2 col-4 text-truncate">
             <span class="text-truncate">@(Transaction.Category is not null ?
                                 Transaction.Category.Name : "Unknown")</span>
+        </div>
+        <div class="col-md-2 col-5 text-truncate text-end">
             @{
                 NumberFormatInfo numberFormat = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
                 numberFormat.CurrencyNegativePattern = 1;
             }
-            <span class="@(Transaction.Amount < 0 ? "text-danger" : "text-success") text-truncate">
+            <span class="@(Transaction.Category != null && !Transaction.Category.IsIncome ? "text-danger" : "text-success") text-truncate">
                 @Transaction.Amount.ToString("C", numberFormat)
             </span>
         </div>
-
-        <div class="col-2">
-            <button class="btn btn-outline-secondary w-100 p-md-2 px-0 m-md-1 m-0" id="td-open-details-btn" aria-label="Open Transaction Details" @onclick="OpenDetails">
+        <div class="col-md-auto col-12 text-end mt-2 mt-md-0 ms-md-auto">
+            <button class="btn btn-outline-secondary btn-sm" id="td-open-details-btn" aria-label="Open Transaction Details" @onclick="OpenDetails">
                 <img id="detail-image" src="images/arrow_forward.svg" alt="An icon of a right facing arrow">
-                <span id=detail-text>Details</span>
+                <span id=detail-text class="d-none d-md-inline">Details</span>
             </button>
         </div>
     </div>
@@ -47,9 +59,23 @@
     {
         <EditForm Model="@Transaction" OnValidSubmit="@SaveTransaction">
             <div class="mb-3">
-                <label for="description" class="form-label">Description</label>
-                <InputText class="form-control" id="description" placeholder="description" @bind-Value="@Transaction.Description" />
+                <label for="source" class="form-label">Source</label>
+                <InputText class="form-control" id="source" placeholder="Merchant, vendor, employer, etc." list="sourceList" @bind-Value="@Transaction.Source" />
+                <datalist id="sourceList">
+                    @foreach (var source in availableSources)
+                    {
+                        <option value="@source" />
+                    }
+                </datalist>
             </div>
+
+            @if (HideDescription != true)
+            {
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <InputText class="form-control" id="description" placeholder="Additional notes or imported description" @bind-Value="@Transaction.Description" />
+                </div>
+            }
 
             <div class="mb-3">
                 <label for="date" class="form-label">Posted</label>
@@ -97,11 +123,21 @@
     else
     {
         <div class="mb-3">
-            <label for="description" class="form-label">Description</label>
-            <div class="form-control" id="description">
-                @Transaction.Description
+            <label for="source" class="form-label">Source</label>
+            <div class="form-control" id="source">
+                @(Transaction.Source ?? "(No source)")
             </div>
         </div>
+
+        @if (HideDescription != true)
+        {
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <div class="form-control" id="description">
+                    @(Transaction.Description ?? "(No description)")
+                </div>
+            </div>
+        }
 
         <div class="mb-3">
             <label for="date" class="form-label">Posted</label>
@@ -113,7 +149,7 @@
         <div class="mb-3">
             <label for="category" class="form-label">Category</label>
             <div class="form-control" id="category">
-                @Transaction.Category.Name
+                @(Transaction.Category?.Name ?? "Unknown")
             </div>
         </div>
 
@@ -124,7 +160,7 @@
             }
 
             <label for="amount" class="form-label">Amount</label>
-            <div class="form-control @(Transaction.Amount < 0 ? "text-danger" : "text-success")" id="amount">
+            <div class="form-control @(Transaction.Category != null && !Transaction.Category.IsIncome ? "text-danger" : "text-success")" id="amount">
                 @Transaction.Amount.ToString("C", numberFormat)
             </div>
         </div>
@@ -132,7 +168,7 @@
         <div class="mb-3">
             <label for="account" class="form-label">Account</label>
             <div class="form-control" id="account">
-                @Transaction.Account.Name
+                @(Transaction.Account?.Name ?? "Unknown")
             </div>
         </div>
 
@@ -172,16 +208,74 @@
     [Parameter]
     public bool? DontShowDelete { get; set; }
 
-    private string title => areDetailsOpen ? (isEditing ? $"Editing Transaction - {Transaction.Description}" : $"Viewing Transaction - {Transaction.Description}") : "";
+    [Parameter]
+    public bool? HideDescription { get; set; }
+
+    private List<string> availableSources = new();
+    private string title => areDetailsOpen ? (isEditing ? $"Editing Transaction{(string.IsNullOrEmpty(Transaction.Description) ? "" : $" - {Transaction.Description}")}" : $"Viewing Transaction{(string.IsNullOrEmpty(Transaction.Description) ? "" : $" - {Transaction.Description}")}") : "";
     private bool areDetailsOpen = false;
     private bool isBusy = false;
     private bool isEditing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSourcesAsync();
+    }
+
+    private async Task LoadSourcesAsync()
+    {
+        if (User is null) return;
+
+        try
+        {
+            // Get unique source values from existing transactions for this user
+            availableSources = await Context.UserTransactions
+                .Where(t => t.UserId == User.Id && !string.IsNullOrWhiteSpace(t.Source))
+                .Select(t => t.Source!)
+                .Distinct()
+                .OrderBy(s => s)
+                .ToListAsync();
+        }
+        catch
+        {
+            availableSources = new List<string>();
+        }
+    }
 
     private async Task SaveTransaction()
     {
         try {
             isBusy = true;
+
+            // Ensure CategoryId is set from Category navigation property if needed
+            if (Transaction.CategoryId == 0 && Transaction.Category != null)
+            {
+                Transaction.CategoryId = Transaction.Category.Id;
+            }
+
+            // Validate CategoryId is set
+            if (Transaction.CategoryId == 0)
+            {
+                return; // Can't save without a category
+            }
+
+            // Load existing transaction from database to avoid tracking conflicts
+            var existingTransaction = await Context.UserTransactions.FindAsync(Transaction.Id);
+            if (existingTransaction == null)
+            {
+                return;
+            }
+
+            // Update only the necessary properties
+            existingTransaction.CategoryId = Transaction.CategoryId;
+            existingTransaction.Date = Transaction.Date;
+            existingTransaction.Source = Transaction.Source;
+            existingTransaction.Description = Transaction.Description;
+            existingTransaction.Amount = Transaction.Amount;
+            existingTransaction.AccountId = Transaction.AccountId;
+
             await Context.SaveChangesAsync();
+            await LoadSourcesAsync(); // Reload sources to include any new one
         }
         catch (Exception)
         {

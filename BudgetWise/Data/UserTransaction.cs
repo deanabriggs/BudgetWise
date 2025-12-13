@@ -30,10 +30,13 @@ namespace BudgetWise.Data
         [DataType(DataType.Date)]
         public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
-        // A short description so the user remembers what this was.
-        [Required]
+        // The source of the transaction (merchant, vendor, employer, etc.)
         [StringLength(100)]
-        public string Description { get; set; } = string.Empty;
+        public string? Source { get; set; }
+
+        // A short description so the user remembers what this was.
+        [StringLength(100)]
+        public string? Description { get; set; }
 
         public int CategoryId { get; set; }
         public virtual Category? Category { get; set; }

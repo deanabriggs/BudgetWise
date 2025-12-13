@@ -1,0 +1,669 @@
+@page "/budgets"
+@using BudgetWise.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@attribute [StreamRendering]
+@attribute [Authorize]
+
+<PageTitle>Budgets</PageTitle>
+
+@inject ApplicationDbContext Context
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<User> UserManager
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Budgets</h1>
+    <button class="btn btn-outline-secondary" @onclick="AutoGenerateBudgets" disabled="@IsBusy">
+        Auto-Generate All Categories ($0)
+    </button>
+</div>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">@ErrorMessage</div>
+}
+
+@if (!string.IsNullOrEmpty(SuccessMessage))
+{
+    <div class="alert alert-success" role="status">@SuccessMessage</div>
+}
+
+@if (user is null)
+{
+    <p>You must be logged in to manage budgets.</p>
+}
+else
+{
+    <!-- BUDGET SUMMARY -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small mb-1">Total Budgeted Income</div>
+                            <div class="h4 mb-0 text-success">@TotalBudgetedIncome.ToString("C")</div>
+                            <div class="text-muted small mt-1">@GetCurrentMonthYear()</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small mb-1">Total Budgeted Expenses</div>
+                            <div class="h4 mb-0 text-danger">@TotalBudgetedExpenses.ToString("C")</div>
+                            <div class="text-muted small mt-1">@GetCurrentMonthYear()</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INCOME BUDGETS -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>Income Budgets</strong>
+            <button class="btn btn-sm btn-outline-primary" @onclick="() => StartCreate(true)">
+                Add Income Budget
+            </button>
+        </div>
+
+        <div class="card-body p-0">
+            @if (incomeBudgets.Count == 0)
+            {
+                <p class="m-3">
+                    No income budgets yet. Add one above to start tracking your income goals.
+                </p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category</th>
+                                <th>Month</th>
+                                <th>Year</th>
+                                <th class="text-end">Monthly Target</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var b in incomeBudgets)
+                            {
+                                <tr>
+                                    <td>@b.Category!.Name</td>
+                                    <td>@MonthName(b.Month)</td>
+                                    <td>@b.Year</td>
+                                    <td class="text-end">
+                                        @b.MonthlyLimit.ToString("C")
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => StartEdit(b)">
+                                            Edit
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(b)">
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- EXPENSE BUDGETS -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>Expense Budgets</strong>
+            <button class="btn btn-sm btn-outline-primary" @onclick="() => StartCreate(false)">
+                Add Expense Budget
+            </button>
+        </div>
+
+        <div class="card-body p-0">
+            @if (expenseBudgets.Count == 0)
+            {
+                <p class="m-3">
+                    No expense budgets yet. Add one above to start tracking your spending limits.
+                </p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category</th>
+                                <th>Month</th>
+                                <th>Year</th>
+                                <th class="text-end">Monthly Target</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var b in expenseBudgets)
+                            {
+                                <tr>
+                                    <td>@b.Category!.Name</td>
+                                    <td>@MonthName(b.Month)</td>
+                                    <td>@b.Year</td>
+                                    <td class="text-end">
+                                        @b.MonthlyLimit.ToString("C")
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => StartEdit(b)">
+                                            Edit
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(b)">
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<SimpleModal IsOpen="@IsBudgetModalOpen" Title="" OnClose="CancelEdit">
+    <EditForm Model="@editBudget" OnValidSubmit="@SaveBudget">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label" for="categoryInput">Category</label>
+            <InputSelect id="categoryInput" class="form-select" @bind-Value="editBudget.CategoryId" @bind-Value:after="OnCategoryChanged">
+                <option value="">Select a category</option>
+                @if (isIncomeBudget)
+                {
+                    <optgroup label="Income Categories">
+                        @foreach (var category in incomeCategories)
+                        {
+                            <option value="@category.Id">@category.Name</option>
+                        }
+                    </optgroup>
+                }
+                else
+                {
+                    <optgroup label="Expense Categories">
+                        @foreach (var category in expenseCategories)
+                        {
+                            <option value="@category.Id">@category.Name</option>
+                        }
+                    </optgroup>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label class="form-label" for="monthSelect">Month</label>
+                <InputSelect id="monthSelect" class="form-select" @bind-Value="editBudget.Month">
+                    <option value="">Select month</option>
+                    @foreach (var month in Months)
+                    {
+                        <option value="@month.Value">@month.Key</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label" for="yearInput">Year</label>
+                <InputNumber id="yearInput" class="form-control" @bind-Value="editBudget.Year" />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label" for="limitInput">Monthly Target ($)</label>
+                <InputNumber id="limitInput" class="form-control" @bind-Value="editBudget.MonthlyLimit" />
+            </div>
+        </div>
+
+        <button class="btn btn-primary" type="submit" disabled="@IsBusy">
+            @(IsEditing ? "Update Budget" : "Add Budget")
+        </button>
+
+        @if (IsEditing)
+        {
+            <button type="button" class="btn btn-secondary ms-2" @onclick="CancelEdit" disabled="@IsBusy">
+                Cancel
+            </button>
+        }
+    </EditForm>
+</SimpleModal>
+
+@code {
+    private User? user;
+    private List<Budget> incomeBudgets = new();
+    private List<Budget> expenseBudgets = new();
+    private Budget editBudget = new();
+    private List<Category> incomeCategories = new();
+    private List<Category> expenseCategories = new();
+    private bool isIncomeBudget = false;
+
+    private string FormTitle { get; set; } = "Add New Budget";
+    private bool IsEditing { get; set; }
+    private bool IsBusy { get; set; }
+    private bool IsBudgetModalOpen { get; set; }
+    private string? ErrorMessage { get; set; }
+    private string? SuccessMessage { get; set; }
+
+    private readonly Dictionary<string, int> Months = new()
+{
+{ "January", 1 }, { "February", 2 }, { "March", 3 }, { "April", 4 },
+{ "May", 5 }, { "June", 6 }, { "July", 7 }, { "August", 8 },
+{ "September", 9 }, { "October", 10 }, { "November", 11 }, { "December", 12 },
+};
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializeUserAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Refresh categories when navigating to this page to ensure newly added categories are available
+        if (user is not null)
+        {
+            await LoadCategoriesAsync();
+        }
+    }
+
+    private async Task InitializeUserAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            user = await UserManager.GetUserAsync(authState.User);
+        }
+
+        if (user is null)
+        {
+            ErrorMessage = "Unable to load user.";
+            return;
+        }
+
+        await LoadCategoriesAsync();
+        await LoadBudgetsAsync();
+        @* await StartCreate(); *@
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        if (user is null) return;
+
+        try
+        {
+            // Load default categories (UserId is null) and user's custom categories
+            var allCategories = await Context.Categories
+                .Where(c => c.UserId == null || c.UserId == user.Id)
+                .ToListAsync();
+
+            // Separate into income and expense categories
+            incomeCategories = allCategories
+                .Where(c => c.IsIncome)
+                .OrderBy(c => c.Name)
+                .ToList();
+
+            expenseCategories = allCategories
+                .Where(c => !c.IsIncome)
+                .OrderBy(c => c.Name)
+                .ToList();
+        }
+        catch (Exception)
+        {
+            // If Categories table doesn't exist yet, use empty lists
+            incomeCategories = new List<Category>();
+            expenseCategories = new List<Category>();
+        }
+    }
+
+    private async Task LoadBudgetsAsync()
+    {
+        var allBudgets = await Context.Budgets
+            .Include(b => b.Category)
+            .Where(b => b.UserId == user!.Id)
+            .ToListAsync();
+
+        // Separate into income and expense budgets based on category type
+        incomeBudgets = allBudgets
+            .Where(b => b.Category != null && b.Category.IsIncome)
+            .OrderByDescending(b => b.Year)
+            .ThenByDescending(b => b.Month)
+            .ThenBy(b => b.Category!.Name)
+            .ToList();
+
+        expenseBudgets = allBudgets
+            .Where(b => b.Category != null && !b.Category.IsIncome)
+            .OrderByDescending(b => b.Year)
+            .ThenByDescending(b => b.Month)
+            .ThenBy(b => b.Category!.Name)
+            .ToList();
+    }
+
+    private decimal TotalBudgetedIncome
+    {
+        get
+        {
+            var now = DateTime.Now;
+            return incomeBudgets
+                .Where(b => b.Month == now.Month && b.Year == now.Year)
+                .Sum(b => b.MonthlyLimit);
+        }
+    }
+
+    private decimal TotalBudgetedExpenses
+    {
+        get
+        {
+            var now = DateTime.Now;
+            return expenseBudgets
+                .Where(b => b.Month == now.Month && b.Year == now.Year)
+                .Sum(b => b.MonthlyLimit);
+        }
+    }
+
+    private string GetCurrentMonthYear()
+    {
+        var now = DateTime.Now;
+        return now.ToString("MMMM yyyy");
+    }
+
+
+    private async Task StartCreate(bool isIncome)
+    {
+        IsBudgetModalOpen = true;
+        IsEditing = false;
+        isIncomeBudget = isIncome;
+        FormTitle = isIncome ? "Add Income Budget" : "Add Expense Budget";
+        SuccessMessage = ErrorMessage = null;
+
+        var now = DateTime.Now;
+
+        // Get a default category based on type
+        var defaultCategory = isIncome
+            ? await Context.Categories
+                .Where(c => c.IsIncome && (c.UserId == null || c.UserId == user!.Id))
+                .OrderBy(c => c.Name)
+                .FirstOrDefaultAsync()
+            : await Context.Categories
+                .Where(c => !c.IsIncome && (c.UserId == null || c.UserId == user!.Id))
+                .OrderBy(c => c.Name)
+                .FirstOrDefaultAsync();
+
+        editBudget = new Budget
+        {
+            UserId = user!.Id,
+            Category = defaultCategory,
+            CategoryId = defaultCategory?.Id ?? 0,
+            Month = now.Month,
+            Year = now.Year,
+            MonthlyLimit = 0
+        };
+    }
+
+    private void StartEdit(Budget b)
+    {
+        IsBudgetModalOpen = true;
+        IsEditing = true;
+        isIncomeBudget = b.Category?.IsIncome ?? false;
+        FormTitle = $"Edit Budget – {b.Category!.Name}";
+        SuccessMessage = ErrorMessage = null;
+
+        // Create a new Budget object to avoid tracking issues
+        editBudget = new Budget
+        {
+            Id = b.Id,
+            UserId = b.UserId,
+            CategoryId = b.CategoryId,
+            Category = b.Category, // Keep reference for display
+            Month = b.Month,
+            Year = b.Year,
+            MonthlyLimit = b.MonthlyLimit
+        };
+    }
+
+    private async Task OnCategoryChanged()
+    {
+        // When CategoryId changes, update the Category navigation property
+        if (editBudget.CategoryId > 0)
+        {
+            var selectedCategory = isIncomeBudget
+                ? incomeCategories.FirstOrDefault(c => c.Id == editBudget.CategoryId)
+                : expenseCategories.FirstOrDefault(c => c.Id == editBudget.CategoryId);
+
+            if (selectedCategory != null)
+            {
+                editBudget.Category = selectedCategory;
+            }
+        }
+        else
+        {
+            editBudget.Category = null;
+        }
+    }
+
+    private async Task SaveBudget()
+    {
+        if (user is null)
+        {
+            ErrorMessage = "You must be logged in to save a budget.";
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        try
+        {
+            // Ensure we always save with the current user
+            editBudget.UserId = user.Id;
+
+            // Ensure CategoryId is set correctly (use the navigation property if CategoryId is 0)
+            if (editBudget.CategoryId == 0 && editBudget.Category != null)
+            {
+                editBudget.CategoryId = editBudget.Category.Id;
+            }
+
+            // Validate that CategoryId is set
+            if (editBudget.CategoryId == 0)
+            {
+                ErrorMessage = "Please select a category.";
+                IsBusy = false;
+                return;
+            }
+
+            // Load the category from database to ensure it exists and is tracked correctly
+            var category = await Context.Categories.FindAsync(editBudget.CategoryId);
+            if (category == null)
+            {
+                ErrorMessage = "Selected category not found.";
+                IsBusy = false;
+                return;
+            }
+
+            if (editBudget.Id == 0)
+            {
+                // New budget - create new entity with proper category reference
+                var newBudget = new Budget
+                {
+                    UserId = user.Id,
+                    CategoryId = editBudget.CategoryId,
+                    Month = editBudget.Month,
+                    Year = editBudget.Year,
+                    MonthlyLimit = editBudget.MonthlyLimit
+                };
+                Context.Budgets.Add(newBudget);
+            }
+            else
+            {
+                // Update existing budget - load from database first
+                var existingBudget = await Context.Budgets.FindAsync(editBudget.Id);
+                if (existingBudget == null)
+                {
+                    ErrorMessage = "Budget not found.";
+                    IsBusy = false;
+                    return;
+                }
+
+                existingBudget.CategoryId = editBudget.CategoryId;
+                existingBudget.Month = editBudget.Month;
+                existingBudget.Year = editBudget.Year;
+                existingBudget.MonthlyLimit = editBudget.MonthlyLimit;
+            }
+
+            await Context.SaveChangesAsync();
+            await LoadBudgetsAsync();
+
+            SuccessMessage = IsEditing ? "Budget updated!" : "Budget added!";
+            @* await StartCreate(); *@
+        }
+        catch (DbUpdateException)
+        {
+            // Most likely the unique index: UserId + Category + Month + Year
+            ErrorMessage = "A budget for this category and month already exists.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error saving: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+            IsBudgetModalOpen = false;
+        }
+    }
+
+    private void CancelEdit()
+    {
+        IsBudgetModalOpen = false;
+        @* await StartCreate(); *@
+    }
+
+    private async Task ConfirmDelete(Budget b)
+    {
+        if (user is null)
+        {
+            ErrorMessage = "You must be logged in to delete a budget.";
+            return;
+        }
+
+        try
+        {
+            Context.Budgets.Remove(b);
+            await Context.SaveChangesAsync();
+
+            SuccessMessage = "Budget deleted.";
+            await LoadBudgetsAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error deleting: {ex.Message}";
+            IsBudgetModalOpen = false;
+        }
+    }
+
+    private string MonthName(int month)
+    {
+        if (month < 1 || month > 12)
+        {
+            return "Unknown";
+        }
+
+        return new DateTime(2000, month, 1).ToString("MMMM");
+    }
+
+    private async Task AutoGenerateBudgets()
+    {
+        if (user is null)
+        {
+            ErrorMessage = "You must be logged in to generate budgets.";
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        try
+        {
+            var now = DateTime.Now;
+            int currentMonth = now.Month;
+            int currentYear = now.Year;
+
+            // Get all categories (income and expense) available to the user
+            var allCategories = await Context.Categories
+                .Where(c => c.UserId == null || c.UserId == user.Id)
+                .ToListAsync();
+
+            if (allCategories.Count == 0)
+            {
+                SuccessMessage = "No categories found. Please create categories first.";
+                IsBusy = false;
+                return;
+            }
+
+            // Get existing budgets for current month/year
+            var existingBudgets = await Context.Budgets
+                .Where(b => b.UserId == user.Id && 
+                           b.Month == currentMonth && 
+                           b.Year == currentYear)
+                .Select(b => b.CategoryId)
+                .ToListAsync();
+
+            // Find categories that don't have budgets yet
+            var categoriesWithoutBudgets = allCategories
+                .Where(c => !existingBudgets.Contains(c.Id))
+                .ToList();
+
+            if (categoriesWithoutBudgets.Count == 0)
+            {
+                SuccessMessage = "All categories already have budgets for this month.";
+                IsBusy = false;
+                return;
+            }
+
+            // Create budgets at $0 for missing categories
+            var newBudgets = categoriesWithoutBudgets.Select(category => new Budget
+            {
+                UserId = user.Id,
+                CategoryId = category.Id,
+                Month = currentMonth,
+                Year = currentYear,
+                MonthlyLimit = 0
+            }).ToList();
+
+            Context.Budgets.AddRange(newBudgets);
+            await Context.SaveChangesAsync();
+            await LoadBudgetsAsync();
+
+            SuccessMessage = $"Created {newBudgets.Count} budget(s) at $0 for categories without existing budgets.";
+        }
+        catch (DbUpdateException)
+        {
+            ErrorMessage = "Some budgets could not be created. They may already exist.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error generating budgets: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+}

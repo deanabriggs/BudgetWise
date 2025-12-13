@@ -1,10 +1,11 @@
-﻿@rendermode InteractiveServer
+@rendermode InteractiveServer
 @page "/"
 @using Microsoft.JSInterop
 @using BudgetWise.Data
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.EntityFrameworkCore.Storage
 
 @inject ApplicationDbContext Context
 @inject UserManager<User> UserManager
@@ -56,20 +57,29 @@ else
                 <div class="card-body">
                     <div class="kpi-label">Income (this month)</div>
                     <div class="kpi-value text-success">@TotalIncome.ToString("C")</div>
-                    <div class="kpi-change @(IncomeChange >= 0 ? "text-success" : "text-danger")">
-                        @if (LastMonthIncome == 0)
-                        {
-                            <span>New tracking</span>
-                        }
-                        else
-                        {
+                    @if (TotalBudgetedIncome > 0)
+                    {
+                        var incomeProgress = Math.Min(100m, (TotalIncome / TotalBudgetedIncome) * 100m);
+                        <div class="mt-2">
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>Budget: @TotalBudgetedIncome.ToString("C")</span>
+                                <span>@incomeProgress.ToString("0")%</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: @incomeProgress%"></div>
+                            </div>
+                        </div>
+                    }
+                    @if (LastMonthIncome != 0)
+                    {
+                        <div class="kpi-change @(IncomeChange >= 0 ? "text-success" : "text-danger") mt-2">
                             <span>
                                 @(IncomeChange >= 0 ? "▲" : "▼")
                                 @Math.Abs(IncomeChange).ToString("C")
                                 vs last month
                             </span>
-                        }
-                    </div>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -82,20 +92,29 @@ else
                 <div class="card-body">
                     <div class="kpi-label">Expenses (this month)</div>
                     <div class="kpi-value text-danger">@TotalExpensesDisplay.ToString("C")</div>
-                    <div class="kpi-change @(ExpenseChange <= 0 ? "text-success" : "text-danger")">
-                        @if (LastMonthExpensesDisplay == 0)
-                        {
-                            <span>New tracking</span>
-                        }
-                        else
-                        {
+                    @if (TotalBudgetedExpenses > 0)
+                    {
+                        var expenseProgress = Math.Min(100m, (TotalExpensesDisplay / TotalBudgetedExpenses) * 100m);
+                        <div class="mt-2">
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>Budget: @TotalBudgetedExpenses.ToString("C")</span>
+                                <span>@expenseProgress.ToString("0")%</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-danger" role="progressbar" style="width: @expenseProgress%"></div>
+                            </div>
+                        </div>
+                    }
+                    @if (LastMonthExpensesDisplay != 0)
+                    {
+                        <div class="kpi-change @(ExpenseChange <= 0 ? "text-success" : "text-danger") mt-2">
                             <span>
                                 @(ExpenseChange <= 0 ? "▼" : "▲")
                                 @Math.Abs(ExpenseChange).ToString("C")
                                 vs last month
                             </span>
-                        }
-                    </div>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -104,7 +123,7 @@ else
         <div class="col-md-4 d-md-flex">
             <div class="card shadow-sm kpi-card flex-fill">
                 <div class="card-body">
-                    <div class="kpi-label">Balance (this month)</div>
+                    <div class="kpi-label">Current Profit/Loss (this month)</div>
                     <div class="kpi-value @(Balance >= 0 ? "text-success" : "text-danger")">
                         @Balance.ToString("C")
                     </div>
@@ -113,61 +132,13 @@ else
         </div>
     </div>
 
-    <!-- Totals + Quick Net Worth -->
+    <!-- Budgeting + Net Worth + Quick Add -->
     <div class="row g-3 mb-4">
+        <!-- Budgeting -->
         <div class="col-md-8 d-md-flex">
             <div class="card shadow-sm flex-fill">
-                <div class="card-header"><strong>Totals (@CurrentMonthName @CurrentYear)</strong></div>
-                <div class="card-body p-0">
-                    <table class="table mb-0">
-                        <tbody>
-                            <tr><td>Total Income</td><td class="text-end text-success">@TotalIncome.ToString("C")</td></tr>
-                            <tr><td>Total Expenses</td><td class="text-end text-danger">@TotalExpensesDisplay.ToString("C")</td></tr>
-                            <tr><td>Total Savings</td><td class="text-end text-primary">@TotalSavings.ToString("C")</td></tr>
-                            <tr><td>Total Debt Balance</td><td class="text-end text-warning">@TotalDebtBalance.ToString("C")</td></tr>
-                            <tr>
-                                <td><strong>Balance</strong></td>
-                                <td class="text-end @(Balance >= 0 ? "text-success" : "text-danger")">
-                                    <strong>@Balance.ToString("C")</strong>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Net worth quick estimate -->
-        <div class="col-md-4 d-md-flex">
-            <div class="card shadow-sm flex-fill">
-                <div class="card-header"><strong>Net Worth</strong></div>
-                <div class="card-body">
-                    <strong>Total Assets</strong>
-                    <div>
-                        $@TotalAssets
-                    </div>
-
-                    <strong>Total Debts</strong>
-                    <div>
-                        $@TotalDebts
-                    </div>
-                    
-                    <br/>
-                    <strong>Net Worth:</strong>
-                    <span class="fw-bold @(NetWorth >= 0 ? "text-success" : "text-danger")">
-                        @NetWorth.ToString("C")
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Budget + Savings Goals -->
-    <div class="row g-3 mb-4 d-md-flex">
-        <div class="col-lg-8 d-md-flex">
-            <div class="card shadow-sm flex-fill">
                 <div class="card-header"><strong>Budgeting (@CurrentMonthName @CurrentYear)</strong></div>
-                <div class="card-body p-0">
+                <div class="card-body px-0 pe-3">
                     @if (BudgetSummaries.Count == 0)
                     {
                         <div class="p-3">No budgets added. <a href="/budgets">Create a budget</a>.</div>
@@ -178,9 +149,9 @@ else
                             <thead>
                                 <tr>
                                     <th>Category</th>
-                                    <th>Budgeted</th>
-                                    <th>Spent</th>
-                                    <th>Remaining</th>
+                                    <th class="text-end">Budgeted</th>
+                                    <th class="text-end">Spent</th>
+                                    <th class="text-end">Remaining</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -188,9 +159,9 @@ else
                                 {
                                     <tr>
                                         <td>@b.Category!.Name</td>
-                                        <td>@b.Budgeted.ToString("C")</td>
-                                        <td class="text-danger">@b.Spent.ToString("C")</td>
-                                        <td class="@(b.Remaining >= 0 ? "text-success" : "text-danger")">
+                                        <td class="text-end">@b.Budgeted.ToString("C")</td>
+                                        <td class="text-end">@b.Spent.ToString("C")</td>
+                                        <td class="text-end @(b.Remaining >= 0 ? "text-success" : "text-danger")">
                                             @b.Remaining.ToString("C")
                                         </td>
                                     </tr>
@@ -202,43 +173,90 @@ else
             </div>
         </div>
 
-        <!-- Savings Goals -->
-        <div class="col-lg-4 d-md-flex">
-            <div class="card shadow-sm kpi-clickable flex-fill"
-                 @onclick="@(() => NavigateTo("/budgets"))"
-                 style="cursor:pointer;">
-                <div class="card-header d-flex justify-content-between">
-                    <strong>Savings Goals</strong>
-                    <a href="/budgets" class="small">Manage</a>
-                </div>
-                <div class="card-body">
-                    @if (SavingsGoals.Count == 0)
-                    {
-                        <p>No goals. <a href="/budgets">Add one</a>.</p>
-                    }
-                    else
-                    {
-                        @foreach (var g in SavingsGoals)
-                        {
-                            var progress = g.TargetAmount <= 0
-                                ? 0
-                                : Math.Min(100m, (g.CurrentAmount / g.TargetAmount) * 100m);
+        <!-- Net Worth + Quick Add (right side) -->
+        <div class="col-md-4 d-md-flex">
+            <div class="d-flex flex-column w-100" style="gap: 1rem;">
+                <!-- Net worth quick estimate -->
+                <div class="card shadow-sm flex-fill">
+                    <div class="card-header"><strong>Current Net Worth</strong></div>
+                    <div class="card-body">
+                        <strong>Total Assets</strong>
+                        <div>
+                            $@TotalAssets
+                        </div>
 
-                            <div class="mb-2">
-                                <div class="d-flex justify-content-between">
-                                    <span>@g.Name</span>
-                                    <span class="small text-muted">
-                                        @g.CurrentAmount.ToString("C") / @g.TargetAmount.ToString("C")
-                                    </span>
-                                </div>
-                                <div class="progress">
-                                    <div class="progress-bar" style="width:@progress%">
-                                        @progress.ToString("0")%
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    }
+                        <div class="mb-4"></div>
+
+                        <strong>Total Debts</strong>
+                        <div>
+                            $@TotalDebts
+                        </div>
+                        
+                        <br/>
+                        <strong>Net Worth:</strong>
+                        <span class="fw-bold @(NetWorth >= 0 ? "text-success" : "text-danger")">
+                            @NetWorth.ToString("C")
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Quick Add Transaction -->
+                <div class="card shadow-sm flex-fill">
+                    <div class="card-header"><strong>Quick Add Transaction</strong></div>
+                    <div class="card-body">
+                        <EditForm Model="@QuickTransaction" OnValidSubmit="@SaveQuickTransaction">
+                            <DataAnnotationsValidator />
+
+                            <label>Date*</label>
+                            <InputDate required aria-required="true" class="form-control mb-2" @bind-Value="@QuickTransaction.Date" />
+
+                            <label>Account*</label>
+                            <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="@QuickTransaction.AccountId">
+                                <option value="0">-- Select an option --</option>
+                                @foreach (var account in UserAccounts)
+                                {
+                                    <option value="@account.Id">@account.Name</option>
+                                }
+                            </InputSelect>
+
+
+                            <label>Source</label>
+                            <InputText class="form-control mb-2" placeholder="Merchant, vendor, employer, etc." list="quickSourceList" @bind-Value="@QuickTransaction.Source" />
+                            <datalist id="quickSourceList">
+                                @foreach (var source in availableSources)
+                                {
+                                    <option value="@source" />
+                                }
+                            </datalist>
+
+                            <label>Category*</label>
+                            <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="@QuickTransaction.CategoryId">
+                                <option value="0">-- Select a category --</option>
+                                @foreach (var category in availableCategories)
+                                {
+                                    <option value="@category.Id">@category.Name</option>
+                                }
+                            </InputSelect>
+
+                            <label>Amount*</label>
+                            <InputNumber required aria-required="true" class="form-control mb-2" @bind-Value="@QuickTransaction.Amount" />
+
+                            <label>Description</label>
+                            <InputText class="form-control mb-2" placeholder="Additional notes or details" @bind-Value="@QuickTransaction.Description" />
+ 
+                            @{
+                                var isFormValid = QuickTransaction.AccountId > 0 
+                                    && QuickTransaction.CategoryId > 0
+                                    && QuickTransaction.Amount != 0;
+
+                                var buttonClass = isFormValid ? "btn btn-primary w-100" : "btn btn-secondary w-100";
+                            }
+
+                            <button class="@buttonClass button">
+                                Add Transaction
+                            </button>
+                        </EditForm>
+                    </div>
                 </div>
             </div>
         </div>
@@ -321,63 +339,9 @@ else
         </div>
     </div>
 
-    <!-- Quick Add Transaction + Recent -->
-    <div class="row g-3 mb-4 d-md-flex ">
-        <!-- Quick Add -->
-        <div class="col-lg-4 flex-fill">
-            <div class="card shadow-sm">
-                <div class="card-header"><strong>Quick Add Transaction</strong></div>
-                <div class="card-body">
-                    <EditForm Model="@QuickTransaction" OnValidSubmit="@SaveQuickTransaction">
-                        <DataAnnotationsValidator />
-
-                        <label>Date</label>
-                        <InputDate required aria-required="true" class="form-control mb-2" @bind-Value="@QuickTransaction.Date" />
-
-                        <label>Account</label>
-                        <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="@QuickTransaction.AccountId">
-                            <option value="0">-- Select an option --</option>
-                            @foreach (var account in UserAccounts)
-                            {
-                                <option value="@account.Id">@account.Name</option>
-                            }
-                        </InputSelect>
-
-
-                        <label>Description</label>
-                        <InputText required aria-required="true" class="form-control mb-2" @bind-Value="@QuickTransaction.Description" />
-
-                        <label>Category</label>
-                        <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="@QuickTransaction.CategoryId">
-                            <option value="0">-- Select a category --</option>
-                            @foreach (var category in availableCategories)
-                            {
-                                <option value="@category.Id">@category.Name</option>
-                            }
-                        </InputSelect>
-
-                        <label>Amount</label>
-                        <InputNumber required aria-required="true" class="form-control mb-2" @bind-Value="@QuickTransaction.Amount" />
-                        
-                        @{
-                            var isFormValid = QuickTransaction.AccountId > 0 
-                                && !String.IsNullOrEmpty(QuickTransaction.Description)
-                                && QuickTransaction.CategoryId > 0
-                                && QuickTransaction.Amount != 0;
-
-                            var buttonClass = isFormValid ? "btn btn-primary w-100" : "btn btn-secondary w-100";
-                        }
-
-                        <button class="@buttonClass button">
-                            Add Transaction
-                        </button>
-                    </EditForm>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent -->
-        <div class="col-lg-8 d-md-flex ">
+    <!-- Recent Transactions -->
+    <div class="row g-3 mb-4 d-md-flex">
+        <div class="col-lg-12 d-md-flex">
             <div class="card shadow-sm flex-fill">
                 <div class="card-header d-flex justify-content-between">
                     <strong>Recent Transactions</strong>
@@ -394,9 +358,19 @@ else
                     }
                     else
                     {
+                        <div class="container-fluid mb-2">
+                            <div class="row border-bottom py-2 fw-bold">
+                                <div class="col-md-2 col-3">Account</div>
+                                <div class="col-md-1 col-3">Date</div>
+                                <div class="col-md-2 col-4">Source</div>
+                                <div class="col-md-2 col-4">Category</div>
+                                <div class="col-md-2 col-5 text-end">Amount</div>
+                                <div class="col-md-auto col-12 text-end ms-md-auto">Detail</div>
+                            </div>
+                        </div>
                         @foreach (var t in FilteredTransactions)
                         {
-                            <TransactionDisplay User="@user" Transaction="@t" Categories="@availableCategories" Accounts="@UserAccounts" Callback="@OnTransactionDisplayChanged" />
+                            <TransactionDisplay User="@user" Transaction="@t" Categories="@availableCategories" Accounts="@UserAccounts" Callback="@OnTransactionDisplayChanged" HideDescription="true" />
                         }
                         @* <table class="table table-sm">
                             <thead>
@@ -412,9 +386,9 @@ else
                                 {
                                     <tr>
                                         <td>@t.Date.ToString("yyyy-MM-dd")</td>
-                                        <td>@t.Description</td>
+                                        <td>@(t.Description ?? "(No description)")</td>
                                         <td>@t.Category!.Name</td>
-                                        <td class="text-end @(t.Amount < 0 ? "text-danger" : "text-success")">
+                                        <td class="text-end @(t.Category != null && !t.Category.IsIncome ? "text-danger" : "text-success")">
                                             @t.Amount.ToString("C")
                                         </td>
                                     </tr>
@@ -439,9 +413,12 @@ else
     private decimal TotalExpensesRaw;
     private decimal TotalExpensesDisplay => Math.Abs(TotalExpensesRaw);
     private decimal Balance => TotalIncome + TotalExpensesRaw;
+    
+    // Budget totals for progress bars
+    private decimal TotalBudgetedIncome;
+    private decimal TotalBudgetedExpenses;
 
-    // Savings + Debts
-    private decimal TotalSavings;
+    // Debts
     private decimal TotalDebtBalance;
 
     // Date context
@@ -462,11 +439,11 @@ else
     private List<CategorySpendingSummary> CategoryBreakdown = new();
     private List<DaySummary> DaySummaries = new();
     private List<UserTransaction> RecentTransactions = new();
-    private List<SavingsGoal> SavingsGoals = new();
 
     // Quick Add
     private UserTransaction QuickTransaction = new();
     private List<Category> availableCategories = new();
+    private List<string> availableSources = new();
 
     // Search for recent transactions
     private string TransactionSearch = string.Empty;
@@ -475,7 +452,9 @@ else
             ? RecentTransactions
             : RecentTransactions.Where(t =>
                    (t.Description?.Contains(TransactionSearch, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                   (t.Category!.Name.Contains(TransactionSearch, StringComparison.OrdinalIgnoreCase)) ||
+                   (t.Source?.Contains(TransactionSearch, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                   (t.Category?.Name.Contains(TransactionSearch, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                   (t.Account?.Name.Contains(TransactionSearch, StringComparison.OrdinalIgnoreCase) ?? false) ||
                    t.Amount.ToString().Contains(TransactionSearch))
               .ToList();
 
@@ -527,6 +506,7 @@ else
 
             await LoadUserAccounts();
             await LoadCategoriesAsync();
+            await LoadSourcesAsync();
             await LoadDashboard();
         }
         catch (Exception ex)
@@ -564,6 +544,26 @@ else
         {
             // If Categories table doesn't exist yet, use empty list
             availableCategories = new List<Category>();
+        }
+    }
+
+    private async Task LoadSourcesAsync()
+    {
+        if (user is null) return;
+
+        try
+        {
+            // Get unique source values from existing transactions for this user
+            availableSources = await Context.UserTransactions
+                .Where(t => t.UserId == user.Id && !string.IsNullOrWhiteSpace(t.Source))
+                .Select(t => t.Source!)
+                .Distinct()
+                .OrderBy(s => s)
+                .ToListAsync();
+        }
+        catch
+        {
+            availableSources = new List<string>();
         }
     }
 
@@ -608,6 +608,8 @@ else
         if (user == null) return;
 
         var transactions = await Context.UserTransactions
+            .Include(t => t.Category)
+            .Include(t => t.Account)
             .Where(t => t.UserId == user.Id &&
                         t.Date.Month == CurrentMonth &&
                         t.Date.Year == CurrentYear)
@@ -620,27 +622,32 @@ else
             .ToListAsync();
 
         var budgets = await Context.Budgets
+            .Include(b => b.Category)
             .Where(b => b.UserId == user.Id &&
                         b.Month == CurrentMonth &&
                         b.Year == CurrentYear)
-            .ToListAsync();
-
-        SavingsGoals = await Context.SavingsGoals
-            .Where(g => g.UserId == user.Id)
             .ToListAsync();
 
         var debts = await Context.Debts
             .Where(d => d.UserId == user.Id)
             .ToListAsync();
 
-        TotalSavings = SavingsGoals.Sum(g => g.CurrentAmount);
         TotalDebtBalance = debts.Sum(d => d.CurrentBalance);
 
-        // Income & expenses
+        // Income & expenses - use category type, not amount sign
         TotalIncome = incomes.Sum(i => i.Amount) +
-                      transactions.Where(t => t.Amount > 0).Sum(t => t.Amount);
+                      transactions.Where(t => t.Category != null && t.Category.IsIncome).Sum(t => t.Amount);
 
-        TotalExpensesRaw = transactions.Where(t => t.Amount < 0).Sum(t => t.Amount);
+        TotalExpensesRaw = -transactions.Where(t => t.Category != null && !t.Category.IsIncome).Sum(t => t.Amount);
+
+        // Calculate total budgeted amounts
+        TotalBudgetedIncome = budgets
+            .Where(b => b.Category != null && b.Category.IsIncome)
+            .Sum(b => b.MonthlyLimit);
+        
+        TotalBudgetedExpenses = budgets
+            .Where(b => b.Category != null && !b.Category.IsIncome)
+            .Sum(b => b.MonthlyLimit);
 
         // Derived data
         BuildBudgetSummaries(budgets, transactions);
@@ -649,11 +656,15 @@ else
         await LoadLastMonthComparison();
         BuildMotivationalMessage();
 
-        // Recent transactions
-        RecentTransactions = transactions
-        .OrderByDescending(t => t.Date)
-        .Take(10)
-        .ToList();
+        // Recent transactions - get from all accounts, not just current month
+        RecentTransactions = await Context.UserTransactions
+            .Include(t => t.Category)
+            .Include(t => t.Account)
+            .Where(t => t.UserId == user.Id)
+            .OrderByDescending(t => t.Date)
+            .ThenByDescending(t => t.Id)
+            .Take(20)
+            .ToListAsync();
 
         QuickTransaction = new UserTransaction
         {
@@ -667,11 +678,11 @@ else
     {
         BudgetSummaries = budgets.Select(b =>
         {
-            var spentRaw = transactions
-                .Where(t => t.Category == b.Category && t.Amount < 0)
+            // For expense budgets, sum all transactions in that category (amount stored as positive)
+            // For income budgets, this would track earned (but we're only showing expense budgets here)
+            var spent = transactions
+                .Where(t => t.Category == b.Category && t.Category != null && !t.Category.IsIncome)
                 .Sum(t => t.Amount);
-
-            var spent = Math.Abs(spentRaw);
 
             return new BudgetSummary
             {
@@ -685,7 +696,7 @@ else
 
     private void BuildCategoryBreakdown(List<UserTransaction> transactions)
     {
-        var expenses = transactions.Where(t => t.Amount < 0).ToList();
+        var expenses = transactions.Where(t => t.Category != null && !t.Category.IsIncome).ToList();
 
         if (!expenses.Any())
         {
@@ -727,8 +738,10 @@ else
             var day = t.Date.Day;
             if (!map.ContainsKey(day)) map[day] = new DaySummary { Day = day };
 
-            if (t.Amount > 0) map[day].Income += t.Amount;
-            else map[day].Expenses += Math.Abs(t.Amount);
+            if (t.Category != null && t.Category.IsIncome)
+                map[day].Income += t.Amount;
+            else if (t.Category != null && !t.Category.IsIncome)
+                map[day].Expenses += t.Amount;
         }
 
         DaySummaries = map.Values.OrderBy(x => x.Day).ToList();
@@ -739,6 +752,7 @@ else
         var prev = new DateTime(CurrentYear, CurrentMonth, 1).AddMonths(-1);
 
         var transactions = await Context.UserTransactions
+            .Include(t => t.Category)
             .Where(t => t.UserId == user!.Id &&
                         t.Date.Month == prev.Month &&
                         t.Date.Year == prev.Year)
@@ -751,9 +765,9 @@ else
             .ToListAsync();
 
         LastMonthIncome = incomes.Sum(i => i.Amount) +
-                          transactions.Where(t => t.Amount > 0).Sum(t => t.Amount);
+                          transactions.Where(t => t.Category != null && t.Category.IsIncome).Sum(t => t.Amount);
 
-        LastMonthExpensesRaw = transactions.Where(t => t.Amount < 0).Sum(t => t.Amount);
+        LastMonthExpensesRaw = -transactions.Where(t => t.Category != null && !t.Category.IsIncome).Sum(t => t.Amount);
     }
 
     private void BuildMotivationalMessage()
@@ -782,24 +796,96 @@ else
 
     private async Task SaveQuickTransaction()
     {
-        QuickTransaction.UserId = user!.Id;
+        ErrorMessage = null;
+        
+        try
+        {
+            // Validate required fields
+            if (QuickTransaction.CategoryId == 0)
+            {
+                // Try to get CategoryId from Category navigation property
+                if (QuickTransaction.Category != null)
+                {
+                    QuickTransaction.CategoryId = QuickTransaction.Category.Id;
+                }
+                else
+                {
+                    ErrorMessage = "Please select a category.";
+                    return;
+                }
+            }
 
-        Context.UserTransactions.Add(QuickTransaction);
-        await Context.SaveChangesAsync();
-        await LoadDashboard();
+            if (QuickTransaction.AccountId == 0)
+            {
+                ErrorMessage = "Please select an account.";
+                return;
+            }
 
-        // After data reload, charts will be re-rendered on next render pass
-        await RenderChartsAsync();
+            // Verify the category exists
+            var categoryExists = await Context.Categories
+                .AnyAsync(c => c.Id == QuickTransaction.CategoryId);
+            
+            if (!categoryExists)
+            {
+                ErrorMessage = "Selected category does not exist. Please select a valid category.";
+                return;
+            }
+
+            // Verify the account exists and belongs to the user
+            var accountExists = await Context.Accounts
+                .AnyAsync(a => a.Id == QuickTransaction.AccountId && a.UserId == user!.Id);
+            
+            if (!accountExists)
+            {
+                ErrorMessage = "Selected account does not exist. Please select a valid account.";
+                return;
+            }
+
+            // Create new transaction entity without navigation properties to avoid tracking conflicts
+            var newTransaction = new UserTransaction
+            {
+                UserId = user!.Id,
+                AccountId = QuickTransaction.AccountId,
+                CategoryId = QuickTransaction.CategoryId,
+                Date = QuickTransaction.Date,
+                Source = QuickTransaction.Source,
+                Description = QuickTransaction.Description,
+                Amount = QuickTransaction.Amount
+            };
+
+            Context.UserTransactions.Add(newTransaction);
+            await Context.SaveChangesAsync();
+            
+            ErrorMessage = null; // Clear any previous errors
+            await LoadDashboard();
+            await LoadSourcesAsync(); // Reload sources to include any new one
+
+            // After data reload, charts will be re-rendered on next render pass
+            await RenderChartsAsync();
+        }
+        catch (DbUpdateException dbEx)
+        {
+            var innerEx = dbEx.InnerException?.Message ?? dbEx.Message;
+            ErrorMessage = $"Database error: {innerEx}";
+            System.Diagnostics.Debug.WriteLine($"Database error: {innerEx}");
+        }
+        catch (Exception ex)
+        {
+            var innerEx = ex.InnerException?.Message ?? ex.Message;
+            ErrorMessage = $"Error saving transaction: {innerEx}";
+            System.Diagnostics.Debug.WriteLine($"Error: {innerEx}");
+        }
     }
 
     // Refresh page when quick transaction is modified
     private async Task OnTransactionDisplayChanged()
     {
         await LoadDashboard();
+        await LoadSourcesAsync(); // Reload sources to include any new ones
 
         RecentTransactions = FilteredTransactions
         .OrderByDescending(t => t.Date)
-        .Take(10)
+        .Take(20)
         .ToList();
 
         StateHasChanged();

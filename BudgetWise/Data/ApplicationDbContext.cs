@@ -34,6 +34,9 @@ namespace BudgetWise.Data
         // NEW: Accounts table
         public DbSet<Account> Accounts { get; set; } = default!;
 
+        // Sources table (reusable source names for transactions)
+        public DbSet<Source> Sources { get; set; } = default!;
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -102,6 +105,18 @@ namespace BudgetWise.Data
             // Note: Uniqueness is enforced in application code
             // For default categories (UserId = null): unique by Name
             // For user categories: unique by UserId + Name
+
+            // ----------- SOURCE RELATIONSHIP -----------
+            builder.Entity<Source>()
+                .HasOne(s => s.User)
+                .WithMany()
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Prevent duplicate sources for same user + name
+            builder.Entity<Source>()
+                .HasIndex(s => new { s.UserId, s.Name })
+                .IsUnique();
         }
     }
 }

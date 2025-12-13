@@ -31,7 +31,7 @@ public class Debt
 
     public DateTime? StartDate { get; set; }
 
-    // ✔ Used in your Razor page
+    // ✔ Used in Razor page
     [NotMapped]
     public decimal ProgressPercent =>
         OriginalAmount == 0 ? 0 :

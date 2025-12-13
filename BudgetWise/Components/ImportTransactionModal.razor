@@ -156,6 +156,7 @@
             string[] columns = currentLine.Split(",");
 
             int date = -1;
+            int source = -1;
             int description = -1;
             int category = -1;
             int amount = -1;
@@ -169,6 +170,8 @@
 
                 if (columnName.Contains("date"))
                     date = i;
+                else if (columnName == "source" || columnName == "merchant" || columnName == "vendor" || columnName == "payee")
+                    source = i;
                 else if (columnName == "description")
                     description = i;
                 else if (columnName == "category")
@@ -232,8 +235,10 @@
                 {
                     UserTransaction? transaction = new UserTransaction {
                         Date = DateOnly.Parse(values[date]),
-                        Description = values[description],
+                        Source = source >= 0 && values.Length > source ? values[source] : null,
+                        Description = description >= 0 && values.Length > description ? values[description] : null,
                         Category = foundCategory,
+                        CategoryId = foundCategory.Id, // Ensure CategoryId is set
                         Amount = foundAmount,
                         AccountId = Account.Id,
                         Account = Account,
@@ -271,9 +276,25 @@
 
             foreach (var transaction in ImportedTransactions)
             {
-                transaction.User = User;
+                // Ensure CategoryId is set from Category navigation property if needed
+                if (transaction.CategoryId == 0 && transaction.Category != null)
+                {
+                    transaction.CategoryId = transaction.Category.Id;
+                }
 
-                Context.UserTransactions.Add(transaction);
+                // Create new transaction entity without navigation properties to avoid tracking conflicts
+                var transactionToAdd = new UserTransaction
+                {
+                    UserId = User.Id,
+                    AccountId = transaction.AccountId,
+                    CategoryId = transaction.CategoryId,
+                    Date = transaction.Date,
+                    Source = transaction.Source,
+                    Description = transaction.Description,
+                    Amount = transaction.Amount
+                };
+
+                Context.UserTransactions.Add(transactionToAdd);
             }
         }
         catch (Exception ex)

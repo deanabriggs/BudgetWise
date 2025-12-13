@@ -25,7 +25,7 @@ namespace BudgetWise.Data
         // Monthly spending limit for this category.
         [Required]
         [Column(TypeName = "decimal(18,2)")]
-        [Range(typeof(decimal), "0", "1000000",
+        [Range(typeof(decimal), "0", "1000000000",
             ErrorMessage = "Budget amount must be a positive value.")]
         public decimal MonthlyLimit { get; set; }
 

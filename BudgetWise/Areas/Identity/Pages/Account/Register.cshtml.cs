@@ -74,27 +74,6 @@ namespace BudgetWise.Areas.Identity.Pages.Account
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
 
-        private readonly List<string> CommonCategories = new()
-        {
-            "Groceries",
-            "Rent/Mortgage",
-            "Utilities",
-            "Transportation",
-            "Entertainment",
-            "Dining Out",
-            "Healthcare",
-            "Insurance",
-            "Education",
-            "Shopping",
-            "Personal Care",
-            "Subscriptions",
-            "Savings",
-            "Debt Payment",
-            "Auto Payments",
-            "Donations",
-            "General"
-        };
-
         public class InputModel
         {
             [Required]
@@ -220,14 +199,22 @@ namespace BudgetWise.Areas.Identity.Pages.Account
 
         private async Task EnsureDefaultCategoriesAsync()
         {
-            // Check if default categories exist, if not create them
-            var existingDefaults = await _context.Categories
-                .Where(c => c.IsDefault && c.UserId == null)
-                .ToListAsync();
+            // Only create default categories if NO default categories exist at all
+            // This prevents recreating categories that users have intentionally deleted
+            var hasAnyDefaults = await _context.Categories
+                .AnyAsync(c => c.IsDefault && c.UserId == null);
 
-            var existingNames = existingDefaults.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            // If default categories already exist (even if some were deleted), don't recreate them
+            if (hasAnyDefaults)
+            {
+                return;
+            }
 
-            foreach (var categoryName in CommonCategories)
+            // Only create default categories if this is the first time (no defaults exist)
+            var existingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // Create expense categories
+            foreach (var categoryName in DefaultCategories.ExpenseCategoryNames)
             {
                 if (!existingNames.Contains(categoryName))
                 {
@@ -235,8 +222,26 @@ namespace BudgetWise.Areas.Identity.Pages.Account
                     {
                         Name = categoryName,
                         IsDefault = true,
+                        IsIncome = false,
                         UserId = null // Default categories are available to all users
                     });
+                    existingNames.Add(categoryName);
+                }
+            }
+
+            // Create income categories
+            foreach (var categoryName in DefaultCategories.IncomeCategoryNames)
+            {
+                if (!existingNames.Contains(categoryName))
+                {
+                    _context.Categories.Add(new Category
+                    {
+                        Name = categoryName,
+                        IsDefault = true,
+                        IsIncome = true,
+                        UserId = null // Default categories are available to all users
+                    });
+                    existingNames.Add(categoryName);
                 }
             }
 

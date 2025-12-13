@@ -53,8 +53,9 @@
     }
 </div>
 
+<!-- Income Budgets Section -->
 <div class="transaction-table budgeting-section" style="margin-bottom: 25px;">
-    <h3>Budgeting (@CurrentMonthName @CurrentYear)</h3>
+    <h3>Income Budgets (@CurrentMonthName @CurrentYear)</h3>
 
     @if (IsLoading)
     {
@@ -63,10 +64,10 @@
     else if (user is null)
     {
     }
-    else if (BudgetSummaries.Count == 0)
+    else if (IncomeBudgetSummaries.Count == 0)
     {
         <p>
-            No budgets found for this month.
+            No income budgets found for this month.
             Create some budgets on the <a href="/budgets">Budgets page</a>.
         </p>
     }
@@ -76,19 +77,65 @@
             <thead>
                 <tr>
                     <th>Category</th>
-                    <th>Budgeted</th>
-                    <th>Spent</th>
+                    <th>Target</th>
+                    <th>Earned</th>
                     <th>Remaining</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var b in BudgetSummaries)
+                @foreach (var b in IncomeBudgetSummaries)
                 {
                     <tr>
-                        <td>@b.Category</td>
+                        <td>@b.Category!.Name</td>
                         <td>@b.Budgeted.ToString("C")</td>
-                        <td class="money-negative">@b.Spent.ToString("C")</td>
+                        <td class="money-positive">@b.Earned.ToString("C")</td>
                         <td class="@(b.Remaining >= 0 ? "money-positive" : "money-negative")">
+                            @b.Remaining.ToString("C")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<!-- Expense Budgets Section -->
+<div class="transaction-table budgeting-section" style="margin-bottom: 25px;">
+    <h3>Expense Budgets (@CurrentMonthName @CurrentYear)</h3>
+
+    @if (IsLoading)
+    {
+        <p>Loading budgets...</p>
+    }
+    else if (user is null)
+    {
+    }
+    else if (ExpenseBudgetSummaries.Count == 0)
+    {
+        <p>
+            No expense budgets found for this month.
+            Create some budgets on the <a href="/budgets">Budgets page</a>.
+        </p>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th style="text-align: right;">Budgeted</th>
+                    <th style="text-align: right;">Spent</th>
+                    <th style="text-align: right;">Remaining</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var b in ExpenseBudgetSummaries)
+                {
+                    <tr>
+                        <td>@b.Category!.Name</td>
+                        <td style="text-align: right;">@b.Budgeted.ToString("C")</td>
+                        <td style="text-align: right;">@b.Spent.ToString("C")</td>
+                        <td style="text-align: right;" class="@(b.Remaining >= 0 ? "money-positive" : "money-negative")">
                             @b.Remaining.ToString("C")
                         </td>
                     </tr>
@@ -113,7 +160,8 @@
     private decimal TotalExpenses => Math.Abs(TotalExpensesRaw);
     private decimal Balance => TotalIncome + TotalExpensesRaw;
 
-    private List<BudgetSummary> BudgetSummaries { get; set; } = new();
+    private List<BudgetSummary> IncomeBudgetSummaries { get; set; } = new();
+    private List<BudgetSummary> ExpenseBudgetSummaries { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -163,46 +211,79 @@
                         i.Date.Year == CurrentYear)
             .SumAsync(i => i.Amount);
 
-        // EXPENSES (negative)
-        TotalExpensesRaw = await Context.UserTransactions
+        // EXPENSES - use category type, not amount sign
+        var expenseTransactions = await Context.UserTransactions
+            .Include(t => t.Category)
             .Where(t => t.UserId == user.Id &&
-                        t.Amount < 0 &&
+                        t.Category != null &&
+                        !t.Category.IsIncome &&
                         t.Date.Month == CurrentMonth &&
                         t.Date.Year == CurrentYear)
-            .SumAsync(t => t.Amount);
+            .ToListAsync();
+        
+        TotalExpensesRaw = -expenseTransactions.Sum(t => t.Amount);
 
         // BUDGETS FOR THIS MONTH
         var budgets = await Context.Budgets
+            .Include(b => b.Category)
             .Where(b => b.UserId == user.Id &&
                         b.Month == CurrentMonth &&
                         b.Year == CurrentYear)
             .ToListAsync();
 
         var transactions = await Context.UserTransactions
+            .Include(t => t.Category)
             .Where(t => t.UserId == user.Id &&
                         t.Date.Month == CurrentMonth &&
                         t.Date.Year == CurrentYear)
             .ToListAsync();
 
-        BudgetSummaries = budgets
+        // Separate into income and expense budgets
+        var incomeBudgets = budgets.Where(b => b.Category != null && b.Category.IsIncome).ToList();
+        var expenseBudgets = budgets.Where(b => b.Category != null && !b.Category.IsIncome).ToList();
+
+        // Calculate income budget summaries (track earned vs target)
+        IncomeBudgetSummaries = incomeBudgets
             .Select(b =>
             {
-                var rawSpent = transactions
-                    .Where(t => t.CategoryId == b.Category.Id && t.Amount < 0)
+                var earned = transactions
+                    .Where(t => t.CategoryId == b.Category!.Id && t.Category != null && t.Category.IsIncome)
                     .Sum(t => t.Amount);
 
-                var spent = Math.Abs(rawSpent);
+                var remaining = b.MonthlyLimit - earned;
+
+                return new BudgetSummary
+                {
+                    Category = b.Category!,
+                    Budgeted = b.MonthlyLimit,
+                    Earned = earned,
+                    Spent = 0, // Not used for income budgets
+                    Remaining = remaining
+                };
+            })
+            .OrderBy(b => b.Category!.Name)
+            .ToList();
+
+        // Calculate expense budget summaries (track spent vs limit)
+        ExpenseBudgetSummaries = expenseBudgets
+            .Select(b =>
+            {
+                var spent = transactions
+                    .Where(t => t.CategoryId == b.Category!.Id && t.Category != null && !t.Category.IsIncome)
+                    .Sum(t => t.Amount);
+
                 var remaining = b.MonthlyLimit - spent;
 
                 return new BudgetSummary
                 {
                     Category = b.Category!,
                     Budgeted = b.MonthlyLimit,
+                    Earned = 0, // Not used for expense budgets
                     Spent = spent,
                     Remaining = remaining
                 };
             })
-            .OrderBy(b => b.Category)
+            .OrderBy(b => b.Category!.Name)
             .ToList();
     }
 
@@ -210,7 +291,8 @@
     {
         public Category? Category { get; set; }
         public decimal Budgeted { get; set; }
-        public decimal Spent { get; set; }
+        public decimal Earned { get; set; } // For income budgets
+        public decimal Spent { get; set; } // For expense budgets
         public decimal Remaining { get; set; }
     }
 }

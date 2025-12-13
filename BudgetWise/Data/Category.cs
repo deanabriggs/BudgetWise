@@ -24,11 +24,17 @@ namespace BudgetWise.Data
         // Indicates if this is a default/common category (true) or custom user category (false).
         public bool IsDefault { get; set; }
 
+        // Indicates if this is an income category (true) or expense category (false).
+        public bool IsIncome { get; set; }
+
         // Navigation property back to the user (nullable for default categories).
         [ForeignKey(nameof(UserId))]
         public virtual User? User { get; set; }
     }
 }
+
+
+
 
 
 

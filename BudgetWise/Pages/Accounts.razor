@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.EntityFrameworkCore.Storage
 @attribute [StreamRendering]
 @attribute [Authorize]
 @rendermode InteractiveServer
@@ -167,21 +168,37 @@ else
                             </button>
                         </div>
                     </div>
-                    <div class="row">
-                        <strong class="col-5">Description</strong>
-                        <strong class="col-md-5 col-4">Amount</strong>
-                        <strong class="col-md-2 col-3">Details</strong>
-                    </div>
                     @if (accountTransactions.Count == 0)
                     {
                         <p class="text-muted">No transactions yet.</p>
                     }
                     else
                     {
-                        @foreach (var t in accountTransactions)
-                        {
-                            <TransactionDisplay User="@user" Transaction="@t" Categories="@availableCategories" Accounts="@allAccounts" Callback="@OnTransactionDisplayChanged" />
-                        }
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Source</th>
+                                        <th>Category</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var t in accountTransactions)
+                                    {
+                                        <tr style="cursor: pointer;" @onclick="() => OpenTransactionDetails(t)">
+                                            <td>@t.Date.ToString("MM/dd/yyyy")</td>
+                                            <td>@(t.Source ?? "(No source)")</td>
+                                            <td>@(t.Category?.Name ?? "Unknown")</td>
+                                            <td class="text-end @(t.Category != null && !t.Category.IsIncome ? "text-danger" : "text-success")">
+                                                @t.Amount.ToString("C")
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
                     }
                 </div> 
             </div>
@@ -253,10 +270,18 @@ else
         </div>
 
         <div class="mb-3">
-            <label for="addDescription" class="form-label">Description</label>
-            <InputText id="addDescription"
+            <label for="addSource" class="form-label">Source</label>
+            <InputText id="addSource"
                        class="form-control"
-                       @bind-Value="newTransaction.Description" />
+                       placeholder="Merchant, vendor, employer, etc."
+                       list="sourceList"
+                       @bind-Value="newTransaction.Source" />
+            <datalist id="sourceList">
+                @foreach (var source in availableSources)
+                {
+                    <option value="@source" />
+                }
+            </datalist>
         </div>
 
         <div class="mb-3">
@@ -265,10 +290,18 @@ else
                          class="form-select"
                          @bind-Value="newTransaction.CategoryId">
                 <option value="">Select a category</option>
-                @foreach (var category in availableCategories)
-                {
-                    <option value="@category.Id">@category.Name</option>
-                }
+                <optgroup label="Income Categories">
+                    @foreach (var category in availableCategories.Where(c => c.IsIncome).OrderBy(c => c.Name))
+                    {
+                        <option value="@category.Id">@category.Name</option>
+                    }
+                </optgroup>
+                <optgroup label="Expense Categories">
+                    @foreach (var category in availableCategories.Where(c => !c.IsIncome).OrderBy(c => c.Name))
+                    {
+                        <option value="@category.Id">@category.Name</option>
+                    }
+                </optgroup>
             </InputSelect>
         </div>
 
@@ -277,10 +310,14 @@ else
             <InputNumber id="addAmount"
                          class="form-control"
                          @bind-Value="newTransaction.Amount" />
-            <div class="form-text">
-                <strong>Positive</strong> values = income (e.g. <code>1500</code> for paycheck).<br />
-                <strong>Negative</strong> values = expenses (e.g. <code>-45.50</code> for groceries).
-            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="addDescription" class="form-label">Description</label>
+            <InputText id="addDescription"
+                       class="form-control"
+                       placeholder="Additional notes or details"
+                       @bind-Value="newTransaction.Description" />
         </div>
 
         <div class="d-flex justify-content-end">
@@ -311,22 +348,38 @@ else
         </div>
 
         <div class="mb-3">
-            <label for="editDescription" class="form-label">Description</label>
-            <InputText id="editDescription"
+            <label for="editSource" class="form-label">Source</label>
+            <InputText id="editSource"
                        class="form-control"
-                       @bind-Value="editTransaction.Description" />
+                       placeholder="Merchant, vendor, employer, etc."
+                       list="sourceListEdit"
+                       @bind-Value="editTransaction.Source" />
+            <datalist id="sourceListEdit">
+                @foreach (var source in availableSources)
+                {
+                    <option value="@source" />
+                }
+            </datalist>
         </div>
 
         <div class="mb-3">
             <label for="editCategory" class="form-label">Category</label>
             <InputSelect id="editCategory"
                          class="form-select"
-                         @bind-Value="editTransaction.Category!.Name">
+                         @bind-Value="editTransaction.CategoryId">
                 <option value="">Select a category</option>
-                @foreach (var category in availableCategories)
-                {
-                    <option value="@category.Name">@category.Name</option>
-                }
+                <optgroup label="Income Categories">
+                    @foreach (var category in availableCategories.Where(c => c.IsIncome).OrderBy(c => c.Name))
+                    {
+                        <option value="@category.Id">@category.Name</option>
+                    }
+                </optgroup>
+                <optgroup label="Expense Categories">
+                    @foreach (var category in availableCategories.Where(c => !c.IsIncome).OrderBy(c => c.Name))
+                    {
+                        <option value="@category.Id">@category.Name</option>
+                    }
+                </optgroup>
             </InputSelect>
         </div>
 
@@ -335,6 +388,14 @@ else
             <InputNumber id="editAmount"
                          class="form-control"
                          @bind-Value="editTransaction.Amount" />
+        </div>
+
+        <div class="mb-3">
+            <label for="editDescription" class="form-label">Description</label>
+            <InputText id="editDescription"
+                       class="form-control"
+                       placeholder="Additional notes or imported description"
+                       @bind-Value="editTransaction.Description" />
         </div>
 
         <div class="d-flex justify-content-end">
@@ -358,9 +419,10 @@ else
         <p>Are you sure you want to delete this transaction?</p>
         <ul>
             <li><strong>Date:</strong> @deleteTarget.Date</li>
-            <li><strong>Description:</strong> @deleteTarget.Description</li>
+            <li><strong>Source:</strong> @(deleteTarget.Source ?? "(No source)")</li>
             <li><strong>Category:</strong> @deleteTarget.Category!.Name</li>
             <li><strong>Amount:</strong> @deleteTarget.Amount.ToString("C")</li>
+            <li><strong>Description:</strong> @(deleteTarget.Description ?? "(No description)")</li>
         </ul>
 
         <div class="d-flex justify-content-end">
@@ -389,6 +451,7 @@ else
     private Account? selectedAccount;
     private List<UserTransaction> accountTransactions = new();
     private List<Category> availableCategories = new();
+    private List<string> availableSources = new();
 
     private Account newAccount = new();
     private UserTransaction newTransaction = new();
@@ -433,6 +496,7 @@ else
         }
 
         await LoadCategoriesAsync();
+        await LoadSourcesAsync();
         await LoadAccountsAsync();
         ResetNewAccount();
     }
@@ -459,6 +523,26 @@ else
         catch
         {
             availableCategories = new List<Category>();
+        }
+    }
+
+    private async Task LoadSourcesAsync()
+    {
+        if (user is null) return;
+
+        try
+        {
+            // Get unique source values from existing transactions for this user
+            availableSources = await Context.UserTransactions
+                .Where(t => t.UserId == user.Id && !string.IsNullOrWhiteSpace(t.Source))
+                .Select(t => t.Source!)
+                .Distinct()
+                .OrderBy(s => s)
+                .ToListAsync();
+        }
+        catch
+        {
+            availableSources = new List<string>();
         }
     }
 
@@ -502,10 +586,38 @@ else
         if (account is null) return;
 
         var transactions = await Context.UserTransactions
+            .Include(t => t.Category)
             .Where(t => t.AccountId == accountId)
             .ToListAsync();
 
-        account.CurrentBalance = account.StartingBalance + transactions.Sum(t => t.Amount);
+        // Calculate balance based on account type
+        // For regular accounts (Checking, Savings, Cash, Retirement):
+        //   - Income categories: positive amounts increase balance
+        //   - Expense categories: positive amounts decrease balance
+        // For expense accounts (CreditCard, Loan):
+        //   - Income categories (payments): positive amounts decrease balance
+        //   - Expense categories (charges): positive amounts increase balance
+        var incomeTotal = transactions
+            .Where(t => t.Category != null && t.Category.IsIncome)
+            .Sum(t => t.Amount);
+
+        var expenseTotal = transactions
+            .Where(t => t.Category != null && !t.Category.IsIncome)
+            .Sum(t => t.Amount);
+
+        bool isExpenseAccount = account.Type == AccountType.CreditCard || account.Type == AccountType.Loan;
+
+        if (isExpenseAccount)
+        {
+            // For expense accounts: payments decrease balance, charges increase balance
+            account.CurrentBalance = account.StartingBalance - incomeTotal + expenseTotal;
+        }
+        else
+        {
+            // For regular accounts: income increases balance, expenses decrease balance
+            account.CurrentBalance = account.StartingBalance + incomeTotal - expenseTotal;
+        }
+
         Context.Accounts.Update(account);
         await Context.SaveChangesAsync();
     }
@@ -529,6 +641,7 @@ else
         try
         {
             accountTransactions = await Context.UserTransactions
+                .Include(t => t.Category)
                 .Where(t => t.AccountId == selectedAccount.Id)
                 .OrderByDescending(t => t.Date)
                 .ThenByDescending(t => t.Id)
@@ -604,6 +717,7 @@ else
             AccountId = selectedAccount.Id,
             Date = DateOnly.FromDateTime(DateTime.Today),
             Category = defaultCategory,
+            CategoryId = defaultCategory?.Id ?? 0, // Ensure CategoryId is set
             Amount = 0
         };
     }
@@ -627,26 +741,85 @@ else
 
         try
         {
-            newTransaction.UserId = user.Id;
-            newTransaction.AccountId = selectedAccount.Id;
-            Context.UserTransactions.Add(newTransaction);
+            // Ensure CategoryId is set from Category navigation property if needed
+            if (newTransaction.CategoryId == 0 && newTransaction.Category != null)
+            {
+                newTransaction.CategoryId = newTransaction.Category.Id;
+            }
+
+            // Validate CategoryId is set
+            if (newTransaction.CategoryId == 0)
+            {
+                ErrorMessage = "Please select a category.";
+                IsBusy = false;
+                return;
+            }
+
+            // Verify the category exists
+            var categoryExists = await Context.Categories
+                .AnyAsync(c => c.Id == newTransaction.CategoryId);
+            
+            if (!categoryExists)
+            {
+                ErrorMessage = "Selected category does not exist.";
+                IsBusy = false;
+                return;
+            }
+
+            // Verify the account exists
+            var accountExists = await Context.Accounts
+                .AnyAsync(a => a.Id == selectedAccount.Id && a.UserId == user.Id);
+            
+            if (!accountExists)
+            {
+                ErrorMessage = "Selected account does not exist.";
+                IsBusy = false;
+                return;
+            }
+
+
+            // Create new transaction entity without navigation properties to avoid tracking conflicts
+            var transactionToAdd = new UserTransaction
+            {
+                UserId = user.Id,
+                AccountId = selectedAccount.Id,
+                CategoryId = newTransaction.CategoryId,
+                Date = newTransaction.Date,
+                Source = newTransaction.Source,
+                Description = newTransaction.Description,
+                Amount = newTransaction.Amount
+            };
+
+            Context.UserTransactions.Add(transactionToAdd);
             await Context.SaveChangesAsync();
 
             await RecalculateAccountBalance(selectedAccount.Id);
             await LoadAccountsAsync();
             await LoadAccountTransactions();
+            await LoadSourcesAsync(); // Reload sources to include the new one
 
             SuccessMessage = "Transaction added successfully.";
             CloseAddTransactionModal();
         }
+        catch (DbUpdateException dbEx)
+        {
+            var innerEx = dbEx.InnerException?.Message ?? dbEx.Message;
+            ErrorMessage = $"Database error: {innerEx}";
+        }
         catch (Exception ex)
         {
-            ErrorMessage = $"Error saving transaction: {ex.Message}";
+            var innerEx = ex.InnerException?.Message ?? ex.Message;
+            ErrorMessage = $"Error saving transaction: {innerEx}";
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private void OpenTransactionDetails(UserTransaction t)
+    {
+        OpenEditTransactionModal(t);
     }
 
     private void OpenEditTransactionModal(UserTransaction t)
@@ -681,14 +854,49 @@ else
 
         try
         {
-            editTransaction.UserId = user.Id;
-            editTransaction.AccountId = selectedAccount.Id;
-            Context.UserTransactions.Update(editTransaction);
+            // Validate CategoryId is set
+            if (editTransaction.CategoryId == 0)
+            {
+                ErrorMessage = "Please select a category.";
+                IsBusy = false;
+                return;
+            }
+
+            // Verify the category exists
+            var categoryExists = await Context.Categories
+                .AnyAsync(c => c.Id == editTransaction.CategoryId);
+            
+            if (!categoryExists)
+            {
+                ErrorMessage = "Selected category does not exist.";
+                IsBusy = false;
+                return;
+            }
+
+            // Load existing transaction from database to avoid tracking conflicts
+            var existingTransaction = await Context.UserTransactions.FindAsync(editTransaction.Id);
+            if (existingTransaction == null)
+            {
+                ErrorMessage = "Transaction not found.";
+                IsBusy = false;
+                return;
+            }
+
+            // Update only the necessary properties
+            existingTransaction.UserId = user.Id;
+            existingTransaction.AccountId = selectedAccount.Id;
+            existingTransaction.CategoryId = editTransaction.CategoryId;
+            existingTransaction.Date = editTransaction.Date;
+            existingTransaction.Source = editTransaction.Source;
+            existingTransaction.Description = editTransaction.Description;
+            existingTransaction.Amount = editTransaction.Amount;
+
             await Context.SaveChangesAsync();
 
             await RecalculateAccountBalance(selectedAccount.Id);
             await LoadAccountsAsync();
             await LoadAccountTransactions();
+            await LoadSourcesAsync(); // Reload sources to include any new one
 
             SuccessMessage = "Transaction updated.";
             CloseEditTransactionModal();
