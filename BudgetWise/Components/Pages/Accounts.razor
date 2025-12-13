@@ -263,11 +263,11 @@ else
             <label for="addCategory" class="form-label">Category</label>
             <InputSelect id="addCategory"
                          class="form-select"
-                         @bind-Value="newTransaction!.Category!.Name">
+                         @bind-Value="newTransaction.CategoryId">
                 <option value="">Select a category</option>
                 @foreach (var category in availableCategories)
                 {
-                    <option value="@category.Name">@category.Name</option>
+                    <option value="@category.Id">@category.Name</option>
                 }
             </InputSelect>
         </div>
@@ -594,35 +594,18 @@ else
     {
         if (user is null || selectedAccount is null) return;
 
-        try
-        {
-            // Get general category
-            var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId ==
-            user.Id).FirstOrDefaultAsync();
+        // Get general category
+        var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId ==
+        user.Id).FirstOrDefaultAsync();
 
-            if (defaultCategory is null)
-            {
-                throw new Exception("Could not find the general category");
-            }
-
-            newTransaction = new UserTransaction
-            {
-                UserId = user.Id,
-                AccountId = selectedAccount.Id,
-                Date = DateOnly.FromDateTime(DateTime.Today),
-                Category = defaultCategory,
-                Amount = 0
-            };
-        }
-        catch (Exception ex)
+        newTransaction = new UserTransaction
         {
-            ErrorMessage = $"Error Resetting: {ex.Message}";
-            IsAddAccountModalOpen = false;
-            IsAddTransactionModalOpen = false;
-            IsDeleteTransactionModalOpen = false;
-            IsEditTransactionModalOpen = false;
-            IsBusy = false;
-        }
+            UserId = user.Id,
+            AccountId = selectedAccount.Id,
+            Date = DateOnly.FromDateTime(DateTime.Today),
+            Category = defaultCategory,
+            Amount = 0
+        };
     }
 
     private async Task OpenAddTransactionModal()

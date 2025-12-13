@@ -13,15 +13,17 @@
     and displayed a button which can be clicked to open the details of the transaction.
  *@
 
-<div class="container-fluid p-0">
-    <div class="row align-items-center justify-content-between mx-1 p-2 border-bottom border-top border-dark-subtle w-100">
-        <div class="col-md-5 col-5 d-flex flex-column">
-            <span class="border-bottom border-dark-subtle text-truncate">@Transaction.Description</span>
+<div class="container-fluid">
+    <div
+        class="row align-items-center justify-content-between border-bottom border-top border-dark-subtle">
+        <div class="col-5 d-flex flex-column text-truncate">
+            <span class="text-truncate">@Transaction.Description</span>
             <span class="text-truncate">@Transaction.Date</span>
         </div>
 
-        <div class="col-md-5 col-4 d-flex flex-column ">
-            <span class="border-bottom border-dark-subtle text-truncate">@Transaction.Category.Name</span>
+        <div class="col-5 d-flex flex-column text-truncate">
+            <span class="text-truncate">@(Transaction.Category is not null ?
+                                Transaction.Category.Name : "Unknown")</span>
             @{
                 NumberFormatInfo numberFormat = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
                 numberFormat.CurrencyNegativePattern = 1;
@@ -31,7 +33,7 @@
             </span>
         </div>
 
-        <div class="col-md-2 col-3">
+        <div class="col-2">
             <button class="btn btn-outline-secondary w-100 p-md-2 px-0 m-md-1 m-0" id="td-open-details-btn" aria-label="Open Transaction Details" @onclick="OpenDetails">
                 <img id="detail-image" src="images/arrow_forward.svg" alt="An icon of a right facing arrow">
                 <span id=detail-text>Details</span>

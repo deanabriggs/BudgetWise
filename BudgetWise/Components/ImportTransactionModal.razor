@@ -36,11 +36,16 @@
                 <button class="btn btn-outline-primary w-50 me-1" @onclick="SaveImportedTransactions">
                     Save
                 </button>
+                <button @onclick="CloseImportModal" class="btn btn-outline-secondary w-50 ms-1">
+                    Cancel
+                </button>
             }
-
-            <button @onclick="CloseImportModal" class="btn btn-outline-secondary w-50 ms-1">
-                Cancel
-            </button>
+            else
+            {
+                <button @onclick="CloseImportModal" class="btn btn-outline-secondary ms-auto ms-1">
+                    Cancel
+                </button>
+            }
         </div>
     </div>
 
