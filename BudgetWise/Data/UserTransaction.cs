@@ -36,7 +36,7 @@ namespace BudgetWise.Data
         public string Description { get; set; } = string.Empty;
 
         public int CategoryId { get; set; }
-        public virtual Category Category { get; set; } = null!;
+        public virtual Category? Category { get; set; }
 
         // Money amount for this transaction.
         // We use decimal for currency (more precise than double).

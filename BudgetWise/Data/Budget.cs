@@ -21,7 +21,7 @@ namespace BudgetWise.Data
         public string UserId { get; set; } = string.Empty;
 
         public int CategoryId { get; set; }
-        public virtual Category Category { get; set; } = null!;
+        public virtual Category? Category { get; set; } = null!;
         // Monthly spending limit for this category.
         [Required]
         [Column(TypeName = "decimal(18,2)")]
