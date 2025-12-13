@@ -1,0 +1,11 @@
+
+#total-transactions::before {
+    content: "Total Transactions:";
+}
+
+
+@media screen and (max-width: 1000px) {
+    #total-transactions::before {
+        content: "Total:";
+    }
+}

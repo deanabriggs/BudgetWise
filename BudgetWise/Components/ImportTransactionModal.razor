@@ -1,3 +1,4 @@
+@rendermode InteractiveServer
 @using BudgetWise.Data
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
@@ -12,51 +13,51 @@
 @attribute [StreamRendering]
 @attribute [Authorize]
 
-<button onclick="@OpenImportModal" class="@ButtonClass" >
+<button onclick="@OpenImportModal" aria-label="Import button" class="@ButtonClass">
     @ButtonText
 </button>
 
 @* Import CSV Model *@
-<SimpleModal IsOpen="@IsImportModalOpen" Title="Import Transactions" OnClose="CloseImportModal" SizeClass="xl">
-    <div>
-        <InputFile id="fileInput" class="visually-hidden" @key=@InputFileId accept=".csv" OnChange="OnInputFileChange" />
-        <label for="fileInput" class="btn btn-secondary">@InputFileMessage</label>
+<SimpleModal IsOpen="@IsImportModalOpen" Title="Import Transactions" OnClose="CloseImportModal" SizeClass="lg">
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@ErrorMessage</div>
+    }
 
-        @if (DisplayImportedRows)
-        {
-            <button class="btn btn-primary" style="float: right; margin-left: 1em;" @onclick="SaveImportedTransactions">
-                Save Import
+    <div class="pb-3 row d-flex justify-content-between">
+        <div class="col-md-4 col-6">
+            <InputFile id="fileInput" class="visually-hidden" @key=@InputFileId accept=".csv" OnChange="OnInputFileChange" />
+            <label for="fileInput" class="btn btn-outline-secondary text-truncate w-100">@InputFileMessage</label>
+        </div>
+
+        <div class="col-lg-3 col-6 d-flex justify-content-right">
+            @if (DisplayImportedRows)
+            {
+                <button class="btn btn-outline-primary w-50 me-1" @onclick="SaveImportedTransactions">
+                    Save
+                </button>
+            }
+
+            <button @onclick="CloseImportModal" class="btn btn-outline-secondary w-50 ms-1">
+                Cancel
             </button>
-        }
-        <button @onclick="CloseImportModal" class="btn btn-secondary" style="float: right; margin-left: 1em;">
-            Cancel
-        </button>
+        </div>
     </div>
 
     @if (DisplayImportedRows)
     {
-        <p>Does this information look correct?</p>
         <div class="import-container">
-            <table id="import-table">
-                <tr>
-                    <th class="bg-secondary text-white fw-normal">Date</th>
-                    <th class="bg-secondary text-white fw-normal">Description</th>
-                    <th class="bg-secondary text-white fw-normal">Category</th>
-                    <th class="bg-secondary text-white fw-normal">Amount</th>
-                </tr>
-                @foreach (var transaction in ImportedTransactions)
+            @if (ImportedTransactions.Count == 0)
+            {
+                <p>No matching transactions.</p>
+            }
+            else
+            {
+                @foreach (var t in ImportedTransactions)
                 {
-                    NumberFormatInfo numberFormat = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
-                    numberFormat.CurrencyNegativePattern = 1;
-
-                    <tr>
-                        <td>@transaction.Date</td>
-                        <td>@transaction.Description</td>
-                        <td>@transaction.Category.Name</td>
-                        <td>@((transaction.Amount > 0 ? "+" : "") + transaction.Amount.ToString("C", numberFormat))</td>
-                    </tr>
+                    <TransactionDisplay User="@User" DontShowDelete=true Transaction="@t" Categories="@UserCategories" Accounts="@UserAccounts" Callback="@OnTransactionDisplayChanged" />
                 }
-            </table>
+            }
         </div>
     }
     else if (IsBusy)
@@ -78,6 +79,12 @@
     [Parameter]
     public required Account Account { get; set ;}
 
+    [Parameter]
+    public required List<Category> UserCategories { get; set; }
+
+    [Parameter]
+    public required List<Account> UserAccounts { get; set; }
+
     private bool IsImportModalOpen { get; set; }
     private Guid InputFileId = Guid.NewGuid();
     private List<UserTransaction> ImportedTransactions = new List<UserTransaction>();
@@ -85,6 +92,7 @@
     private string InputFileMessage = "Choose .csv file";
     private bool IsBusy = false;
     private string? ErrorMessage { get; set; }
+
 
     private void OpenImportModal()
     {
@@ -183,17 +191,14 @@
 
                 if (credit >= 0 && !values[credit].IsNullOrEmpty())
                 {
-                    Console.WriteLine(("C", credit > 0 ? values[credit] : ""));
                     foundAmount = Decimal.Parse(values[credit]);
                 }
                 else if (debit >= 0 && !values[debit].IsNullOrEmpty())
                 {
-                    Console.WriteLine(("D", debit > 0 ? values[debit] : ""));
                     foundAmount = -1 * Math.Abs(Decimal.Parse(values[debit]));
                 }
                 else if (amount >= 0 && !values[amount].IsNullOrEmpty())
                 {
-                    Console.WriteLine(("A", amount > 0 ? values[amount] : ""));
                     foundAmount = Decimal.Parse(values[amount]);
                 }
 
@@ -226,6 +231,7 @@
                         Category = foundCategory,
                         Amount = foundAmount,
                         AccountId = Account.Id,
+                        Account = Account,
                     };
 
                     ImportedTransactions.Add(transaction);
@@ -254,6 +260,8 @@
     {
         if (User is null || ImportedTransactions.Count == 0) return;
 
+        ErrorMessage = null;
+
         try {
 
             foreach (var transaction in ImportedTransactions)
@@ -270,6 +278,7 @@
         finally 
         {
             await Context.SaveChangesAsync();
+            StateHasChanged();
             CloseImportModal();
         }
     }
@@ -278,5 +287,12 @@
     {
         IsImportModalOpen = false;
         DisplayImportedRows = false;
+    }
+
+    // Refresh page when quick transaction is modified
+    private Task OnTransactionDisplayChanged()
+    {
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 }

@@ -1,0 +1,14 @@
+#detail-image {
+    display: none;
+    filter: brightness(50%);
+}
+
+@media screen and (max-width: 500px) {
+    #detail-text {
+        display: none;
+    }
+
+    #detail-image {
+        display: initial;
+    }
+}

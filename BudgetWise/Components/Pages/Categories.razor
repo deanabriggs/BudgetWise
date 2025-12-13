@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
+@using System.Threading.Tasks
 @attribute [StreamRendering]
 @attribute [Authorize]
 
@@ -30,138 +31,138 @@
 }
 else
 {
-    <!-- ADD CATEGORY FORM -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <strong>@FormTitle</strong>
-        </div>
-        <div class="card-body">
-            <EditForm Model="@editCategory" OnValidSubmit="@SaveCategory">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
-
-                <div class="mb-3">
-                    <label class="form-label" for="categoryNameInput">Category Name</label>
-                    <InputText id="categoryNameInput"
-                               class="form-control"
-                               @bind-Value="editCategory.Name"
-                               placeholder="e.g. Groceries, Rent, Entertainment" />
+    <div class="container">
+        <div class="row">
+            <!-- CUSTOM CATEGORIES -->
+            <div class="col-lg-9 mb-4 mb-lg-0">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <strong>Custom Categories</strong>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="StartCreate">
+                            Add Category
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (customCategories.Count == 0)
+                        {
+                            <p class="m-3">
+                                No custom categories yet. Add one above to create your own categories.
+                            </p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Category</th>
+                                            <th class="text-end">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var cat in customCategories)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    @* <span class="badge ms-2 bg-secondary">Custom</span> *@
+                                                    @cat.Name
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-sm btn-outline-secondary me-2"
+                                                        @onclick="() => StartEdit(cat)">
+                                                        Edit
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger"
+                                                        @onclick="() => ConfirmDelete(cat)">
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
                 </div>
+            </div>
 
-                <button class="btn btn-primary"
-                        type="submit"
-                        disabled="@IsBusy">
-                    @(IsEditing ? "Update Category" : "Add Category")
-                </button>
-
-                @if (IsEditing)
-                {
-                    <button type="button"
-                            class="btn btn-secondary ms-2"
-                            @onclick="CancelEdit"
-                            disabled="@IsBusy">
-                        Cancel
-                    </button>
-                }
-            </EditForm>
-        </div>
-    </div>
-
-    <!-- DEFAULT CATEGORIES -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <strong>Default Categories</strong>
-            <span class="badge bg-secondary ms-2">Common</span>
-        </div>
-        <div class="card-body p-0">
-            @if (defaultCategories.Count == 0)
-            {
-                <p class="m-3">No default categories available.</p>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Category Name</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var cat in defaultCategories)
-                            {
-                                <tr>
-                                    <td>
-                                        @cat.Name
-                                        <span class="badge bg-info ms-2">Default</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary"
-                                                @onclick="() => StartEdit(cat)"
-                                                title="Edit category name">
-                                            Edit
-                                        </button>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+            <!-- DEFAULT CATEGORIES -->
+            <div class="col-lg-3">
+                <div class="card">
+                    <div class="card-header">
+                        <strong>Default Categories</strong>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (defaultCategories.Count == 0)
+                        {
+                            <p class="m-3">No default categories available.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Category Name</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var cat in defaultCategories)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <span class="badge ms-2 bg-primary">Default</span>
+                                                    @cat.Name
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
                 </div>
-            }
-        </div>
-    </div>
-
-    <!-- CUSTOM CATEGORIES -->
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <strong>Your Custom Categories</strong>
-            <button class="btn btn-sm btn-outline-primary"
-                    @onclick="StartCreate">
-                Add New Category
-            </button>
-        </div>
-        <div class="card-body p-0">
-            @if (customCategories.Count == 0)
-            {
-                <p class="m-3">
-                    No custom categories yet. Add one above to create your own categories.
-                </p>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Category Name</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var cat in customCategories)
-                            {
-                                <tr>
-                                    <td>@cat.Name</td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary me-2"
-                                                @onclick="() => StartEdit(cat)">
-                                            Edit
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger"
-                                                @onclick="() => ConfirmDelete(cat)">
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
+            </div>
         </div>
     </div>
 }
+
+<SimpleModal IsOpen="@IsAddOpen" Title="@FormTitle" OnClose="CloseModals">
+    <EditForm Model="@editCategory" OnValidSubmit="@SaveCategory">
+        <div class="mb-3">
+            <label for="category-name" class="form-label">Category Name</label>
+            <InputText class="form-control" id="category-name" placeholder="Category Name" @bind-Value="@editCategory.Name" />
+        </div>
+
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-secondary me-2" @onclick="CloseModals" disabled="@IsBusy">
+                Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" disabled="@IsBusy">
+                @(IsBusy ? "Saving..." : "Save")
+            </button>
+        </div>
+    </EditForm>
+</SimpleModal>
+
+<SimpleModal IsOpen="@IsEditing" Title="@FormTitle" OnClose="CloseModals">
+    <EditForm Model="@editCategory" OnValidSubmit="@SaveCategory">
+        <div class="mb-3">
+            <label for="category-name" class="form-label">Category Name</label>
+            <InputText class="form-control" id="category-name" placeholder="Category Name" @bind-Value="@editCategory.Name" />
+        </div>
+
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-secondary me-2" @onclick="CloseModals" disabled="@IsBusy">
+                Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" disabled="@IsBusy">
+                @(IsBusy ? "Saving..." : "Save")
+            </button>
+        </div>
+    </EditForm>
+</SimpleModal>
 
 @code {
     private User? user;
@@ -174,6 +175,8 @@ else
     private bool IsBusy { get; set; }
     private string? ErrorMessage { get; set; }
     private string? SuccessMessage { get; set; }
+
+    private bool IsAddOpen = false;
 
     // Common default categories
     private readonly List<string> CommonCategories = new()
@@ -214,7 +217,6 @@ else
 
         await EnsureDefaultCategoriesAsync();
         await LoadCategoriesAsync();
-        StartCreate();
     }
 
     private async Task EnsureDefaultCategoriesAsync()
@@ -268,6 +270,7 @@ else
 
     private void StartCreate()
     {
+        IsAddOpen = true;
         IsEditing = false;
         FormTitle = "Add New Category";
         SuccessMessage = ErrorMessage = null;
@@ -283,16 +286,11 @@ else
     private void StartEdit(Category c)
     {
         IsEditing = true;
+        IsAddOpen = true;
         FormTitle = $"Edit Category – {c.Name}";
         SuccessMessage = ErrorMessage = null;
 
-        editCategory = c;//new Category
-        @* {
-            Id = c.Id,
-            UserId = c.UserId,
-            Name = c.Name,
-            IsDefault = c.IsDefault
-        }; *@
+        editCategory = c;
     }
 
     private async Task SaveCategory()
@@ -373,6 +371,7 @@ else
         }
         finally
         {
+            IsAddOpen = false;
             IsBusy = false;
         }
     }
@@ -429,6 +428,17 @@ else
         {
             ErrorMessage = $"Error deleting: {ex.Message}";
         }
+    }
+
+
+    private async Task CloseModals()
+    {
+        IsAddOpen = false;
+        IsEditing = false;
+
+        Context.ChangeTracker.Clear();
+
+        await LoadCategoriesAsync();
     }
 }
 

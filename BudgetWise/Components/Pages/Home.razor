@@ -1,4 +1,5 @@
-﻿@page "/"
+﻿@rendermode InteractiveServer
+@page "/"
 @using Microsoft.JSInterop
 @using BudgetWise.Data
 @using Microsoft.AspNetCore.Identity
@@ -37,7 +38,8 @@ else
         <div class="col-md-12">
             @if (!string.IsNullOrWhiteSpace(MotivationalMessage))
             {
-                <div class="alert alert-success py-2 px-3 mb-0 small">
+                <div
+                    class="alert @(Balance == 0 ? "alert-warning" : (Balance > 0 ? "alert-success" : "alert-danger")) py-2 px-3 mb-0 small">
                     @MotivationalMessage
                 </div>
             }
@@ -45,9 +47,9 @@ else
     </div>
 
     <!-- KPI Row -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4 d-md-flex">
         <!-- Income -->
-        <div class="col-md-4">
+        <div class="col-md-4 flex-fill">
             <div class="card shadow-sm kpi-card kpi-clickable"
                  @onclick="@(() => NavigateTo("/budgets"))"
                  style="cursor:pointer;">
@@ -73,8 +75,8 @@ else
         </div>
 
         <!-- Expenses -->
-        <div class="col-md-4">
-            <div class="card shadow-sm kpi-card kpi-clickable"
+        <div class="col-md-4 d-md-flex">
+            <div class="card shadow-sm kpi-card kpi-clickable flex-fill"
                  @onclick="@(() => NavigateTo("/accounts"))"
                  style="cursor:pointer;">
                 <div class="card-body">
@@ -99,8 +101,8 @@ else
         </div>
 
         <!-- Balance -->
-        <div class="col-md-4">
-            <div class="card shadow-sm kpi-card">
+        <div class="col-md-4 d-md-flex">
+            <div class="card shadow-sm kpi-card flex-fill">
                 <div class="card-body">
                     <div class="kpi-label">Balance (this month)</div>
                     <div class="kpi-value @(Balance >= 0 ? "text-success" : "text-danger")">
@@ -113,8 +115,8 @@ else
 
     <!-- Totals + Quick Net Worth -->
     <div class="row g-3 mb-4">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
+        <div class="col-md-8 d-md-flex">
+            <div class="card shadow-sm flex-fill">
                 <div class="card-header"><strong>Totals (@CurrentMonthName @CurrentYear)</strong></div>
                 <div class="card-body p-0">
                     <table class="table mb-0">
@@ -136,8 +138,8 @@ else
         </div>
 
         <!-- Net worth quick estimate -->
-        <div class="col-md-4">
-            <div class="card shadow-sm">
+        <div class="col-md-4 d-md-flex">
+            <div class="card shadow-sm flex-fill">
                 <div class="card-header"><strong>Net Worth</strong></div>
                 <div class="card-body">
                     <strong>Total Assets</strong>
@@ -162,9 +164,9 @@ else
     </div>
 
     <!-- Budget + Savings Goals -->
-    <div class="row g-3 mb-4">
-        <div class="col-lg-8">
-            <div class="card shadow-sm">
+    <div class="row g-3 mb-4 d-md-flex">
+        <div class="col-lg-8 d-md-flex">
+            <div class="card shadow-sm flex-fill">
                 <div class="card-header"><strong>Budgeting (@CurrentMonthName @CurrentYear)</strong></div>
                 <div class="card-body p-0">
                     @if (BudgetSummaries.Count == 0)
@@ -202,8 +204,8 @@ else
         </div>
 
         <!-- Savings Goals -->
-        <div class="col-lg-4">
-            <div class="card shadow-sm kpi-clickable"
+        <div class="col-lg-4 d-md-flex">
+            <div class="card shadow-sm kpi-clickable flex-fill"
                  @onclick="@(() => NavigateTo("/budgets"))"
                  style="cursor:pointer;">
                 <div class="card-header d-flex justify-content-between">
@@ -244,10 +246,10 @@ else
     </div>
 
     <!-- Category Breakdown + Daily Trend (with charts) -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4 d-md-flex">
         <!-- Category Breakdown + Pie Chart -->
-        <div class="col-lg-6">
-            <div class="card shadow-sm">
+        <div class="col-lg-6 flex-fill">
+            <div class="card shadow-sm h-100">
                 <div class="card-header"><strong>Spending by Category</strong></div>
                 <div class="card-body">
                     @if (CategoryBreakdown.Count == 0)
@@ -280,8 +282,8 @@ else
         </div>
 
         <!-- Daily Trend + Line Chart -->
-        <div class="col-lg-6">
-            <div class="card shadow-sm">
+        <div class="col-lg-6 d-md-flex">
+            <div class="card shadow-sm flex-fill">
                 <div class="card-header"><strong>Daily Income & Expense Trend</strong></div>
                 <div class="card-body">
                     @if (DaySummaries.Count == 0)
@@ -321,9 +323,9 @@ else
     </div>
 
     <!-- Quick Add Transaction + Recent -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4 d-md-flex ">
         <!-- Quick Add -->
-        <div class="col-lg-4">
+        <div class="col-lg-4 flex-fill">
             <div class="card shadow-sm">
                 <div class="card-header"><strong>Quick Add Transaction</strong></div>
                 <div class="card-body">
@@ -331,11 +333,11 @@ else
                         <DataAnnotationsValidator />
 
                         <label>Date</label>
-                        <InputDate required aria-required="true" class="form-control mb-2" @bind-Value="QuickTransaction.Date" />
+                        <InputDate required aria-required="true" class="form-control mb-2" @bind-Value="@QuickTransaction.Date" />
 
                         <label>Account</label>
                         <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="@QuickTransaction.AccountId">
-                            <option required value="0">-- Select an option --</option>
+                            <option value="0">-- Select an option --</option>
                             @foreach (var account in UserAccounts)
                             {
                                 <option value="@account.Id">@account.Name</option>
@@ -344,11 +346,11 @@ else
 
 
                         <label>Description</label>
-                        <InputText required aria-required="true" class="form-control mb-2" @bind-Value="QuickTransaction.Description" />
+                        <InputText required aria-required="true" class="form-control mb-2" @bind-Value="@QuickTransaction.Description" />
 
                         <label>Category</label>
-                        <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="QuickTransaction.CategoryId">
-                            <option value="">Select a category</option>
+                        <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="@QuickTransaction.CategoryId">
+                            <option value="0">-- Select a category --</option>
                             @foreach (var category in availableCategories)
                             {
                                 <option value="@category.Id">@category.Name</option>
@@ -356,18 +358,18 @@ else
                         </InputSelect>
 
                         <label>Amount</label>
-                        <InputNumber required aria-required="true" class="form-control mb-2" @bind-Value="QuickTransaction.Amount" />
+                        <InputNumber required aria-required="true" class="form-control mb-2" @bind-Value="@QuickTransaction.Amount" />
                         
                         @{
                             var isFormValid = QuickTransaction.AccountId > 0 
                                 && !String.IsNullOrEmpty(QuickTransaction.Description)
-                                && !String.IsNullOrEmpty(QuickTransaction.Category!.Name)
-                                && QuickTransaction.Amount > 0;
+                                && QuickTransaction.CategoryId > 0
+                                && QuickTransaction.Amount != 0;
 
                             var buttonClass = isFormValid ? "btn btn-primary w-100" : "btn btn-secondary w-100";
                         }
 
-                        <button class="@buttonClass">
+                        <button class="@buttonClass button">
                             Add Transaction
                         </button>
                     </EditForm>
@@ -376,8 +378,8 @@ else
         </div>
 
         <!-- Recent -->
-        <div class="col-lg-8">
-            <div class="card shadow-sm">
+        <div class="col-lg-8 d-md-flex ">
+            <div class="card shadow-sm flex-fill">
                 <div class="card-header d-flex justify-content-between">
                     <strong>Recent Transactions</strong>
                     <a href="/accounts" class="small">View all</a>
@@ -393,7 +395,11 @@ else
                     }
                     else
                     {
-                        <table class="table table-sm">
+                        @foreach (var t in FilteredTransactions)
+                        {
+                            <TransactionDisplay User="@user" Transaction="@t" Categories="@availableCategories" Accounts="@UserAccounts" Callback="@OnTransactionDisplayChanged" />
+                        }
+                        @* <table class="table table-sm">
                             <thead>
                                 <tr>
                                     <th>Date</th>
@@ -415,7 +421,7 @@ else
                                     </tr>
                                 }
                             </tbody>
-                        </table>
+                        </table> *@
                     }
                 </div>
             </div>
@@ -639,40 +645,22 @@ else
 
         // Derived data
         BuildBudgetSummaries(budgets, transactions);
-        await BuildCategoryBreakdown(transactions);
+        BuildCategoryBreakdown(transactions);
         BuildDaySummaries(transactions, incomes);
         await LoadLastMonthComparison();
         BuildMotivationalMessage();
 
         // Recent transactions
         RecentTransactions = transactions
-            .OrderByDescending(t => t.Date)
-            .Take(10)
-            .ToList();
+        .OrderByDescending(t => t.Date)
+        .Take(10)
+        .ToList();
 
-        // Get general category
-        var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user.Id).FirstOrDefaultAsync();
-
-        if (defaultCategory is null)
-        {
-            defaultCategory = new Category
-            {
-                UserId = user.Id,
-                Name = "General",
-                IsDefault = true
-            };
-
-            Context.Categories.Add(defaultCategory);
-            await Context.SaveChangesAsync();
-        }
-
-        // Reset quick form
         QuickTransaction = new UserTransaction
         {
             UserId = user.Id,
             AccountId = QuickTransaction.AccountId,
             Date = DateOnly.FromDateTime(DateTime.Today),
-            Category = defaultCategory,
         };
     }
 
@@ -696,7 +684,7 @@ else
         }).ToList();
     }
 
-    private async Task BuildCategoryBreakdown(List<UserTransaction> transactions)
+    private void BuildCategoryBreakdown(List<UserTransaction> transactions)
     {
         var expenses = transactions.Where(t => t.Amount < 0).ToList();
 
@@ -708,36 +696,20 @@ else
 
         var total = Math.Abs(expenses.Sum(t => t.Amount));
 
-        // Get general category
-        var defaultCategory = await Context.Categories.Where(t => t.Name == "General" && t.UserId == user.Id).FirstOrDefaultAsync();
-
-        if (defaultCategory is null)
-        {
-            defaultCategory = new Category
-            {
-                UserId = user!.Id,
-                Name = "General",
-                IsDefault = true
-            };
-
-            Context.Categories.Add(defaultCategory);
-            await Context.SaveChangesAsync();
-        }
-
         CategoryBreakdown = expenses
-            .GroupBy(t => t.Category ?? defaultCategory)
-            .Select(g =>
+        .GroupBy(t => t.Category)
+        .Select(g =>
+        {
+            var amount = Math.Abs(g.Sum(x => x.Amount));
+            return new CategorySpendingSummary
             {
-                var amount = Math.Abs(g.Sum(x => x.Amount));
-                return new CategorySpendingSummary
-                {
-                    Category = g.Key,
-                    Amount = amount,
-                    PercentOfTotal = (amount / total) * 100m
-                };
-            })
-            .OrderByDescending(c => c.Amount)
-            .ToList();
+                Category = g.Key,
+                Amount = amount,
+                PercentOfTotal = (amount / total) * 100m
+            };
+        })
+        .OrderByDescending(c => c.Amount)
+        .ToList();
     }
 
     private void BuildDaySummaries(List<UserTransaction> transactions, List<Income> incomes)
@@ -819,6 +791,20 @@ else
 
         // After data reload, charts will be re-rendered on next render pass
         await RenderChartsAsync();
+    }
+
+    // Refresh page when quick transaction is modified
+    private async Task OnTransactionDisplayChanged()
+    {
+        await LoadDashboard();
+
+        RecentTransactions = FilteredTransactions
+        .OrderByDescending(t => t.Date)
+        .Take(10)
+        .ToList();
+
+        StateHasChanged();
+        return;
     }
 
     private void NavigateTo(string url) => Nav.NavigateTo(url);
