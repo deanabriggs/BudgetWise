@@ -24,6 +24,12 @@ h1:focus {
     outline: none;
 }
 
+h1:first-of-type {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
 .valid.modified:not([type=checkbox]) {
     outline: 1px solid #26b050;
 }
