@@ -210,7 +210,7 @@
                     foundAmount = Decimal.Parse(values[amount]);
                 }
 
-                string categoryStr = category > 0 ? values[category] : "Gene";
+                string categoryStr = category > 0 && values.Length > category ? values[category] : "Uncategorized";
 
                 if (!categories.Contains(categoryStr))
                 {
@@ -238,7 +238,6 @@
                         Source = source >= 0 && values.Length > source ? values[source] : null,
                         Description = description >= 0 && values.Length > description ? values[description] : null,
                         Category = foundCategory,
-                        CategoryId = foundCategory.Id, // Ensure CategoryId is set
                         Amount = foundAmount,
                         AccountId = Account.Id,
                         Account = Account,
@@ -260,6 +259,7 @@
         }
         finally
         {
+            await Context.SaveChangesAsync();
             StateHasChanged();
             IsBusy = false;
             DisplayImportedRows = true;

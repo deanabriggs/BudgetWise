@@ -1,0 +1,194 @@
+[33mcommit 14ffdf12c4c4fab7ee36ce8caa768d71ee647725[m[33m ([m[1;31morigin/origin[m[33m, [m[1;32morigin[m[33m)[m
+Author: zaphrey <zachary.humphreys32@gmail.com>
+Date:   Wed Dec 10 22:37:37 2025 -0500
+
+    Fixed cyclic relationship issue with categories
+
+[33mcommit 921a16d0062b745bb999ee1d15aad77691ea9410[m[33m ([m[1;31morigin/master[m[33m)[m
+Merge: e7a624e 30b006d
+Author: Humphreys, Zachary <hum23003@byui.edu>
+Date:   Wed Dec 10 01:02:42 2025 +0000
+
+    Merged PR 8: Updated entityies that use string for categories to use category entities
+
+[33mcommit 30b006d0d3c8ed61f20642dadf8b548695c7a777[m[33m ([m[1;31morigin/zh-bugfixes[m[33m, [m[1;32mzh-bugfixes[m[33m)[m
+Author: zaphrey <zachary.humphreys32@gmail.com>
+Date:   Tue Dec 9 20:01:06 2025 -0500
+
+    Updated entities to use the category instead of the category being from a string
+
+[33mcommit 8498b0487570f3e0e623c9f8af97a3fe7df4e546[m
+Author: zaphrey <zachary.humphreys32@gmail.com>
+Date:   Tue Dec 9 15:32:34 2025 -0500
+
+    message
+
+[33mcommit e7a624e19b7d82fbe42895fef35422c5968f8738[m
+Merge: 36b09b9 9b3e9c5
+Author: Humphreys, Zachary <hum23003@byui.edu>
+Date:   Tue Dec 9 20:20:59 2025 +0000
+
+    Merged PR 6: integrated accounts into quick add transaction and net worth estimate calcula...
+    
+    integrated accounts into quick add transaction and net worth estimate calculates itself now
+
+[33mcommit 9b3e9c57bd4a5e6d30f0556a53eab859382f3e5e[m[33m ([m[1;31morigin/zh-home-page-touchup[m[33m)[m
+Author: Zachary Humphreys <zachary.humphreys32@gmail.com>
+Date:   Sun Dec 7 21:42:45 2025 -0500
+
+    integrated accounts into quick add transaction and net worth estimate calculates itself now
+
+[33mcommit 36b09b9e0ec4ec671162306ee17c9a19e3e241b3[m
+Merge: 5a8bced 81c7137
+Author: Briggs, Deana <bri23032@byui.edu>
+Date:   Sat Dec 6 19:07:52 2025 +0000
+
+    Merged PR 5: Added Accounts and Removed un-needed pages
+    
+    Added Accounts and Removed un-needed pages
+
+[33mcommit 81c7137b80f1a10d1ddd15436b705276bf6a7b9d[m
+Author: Deana Briggs <145316150+deanabriggs@users.noreply.github.com>
+Date:   Sat Dec 6 09:41:23 2025 -0800
+
+    Added Accounts and Removed un-needed pages
+
+[33mcommit 5a8bcedc400b98c90d363a86be72103b0b18b5c6[m
+Merge: cedc4ca 6691f59
+Author: Briggs, Deana <bri23032@byui.edu>
+Date:   Fri Dec 5 01:08:12 2025 +0000
+
+    Merged PR 4: Added categories
+
+[33mcommit 6691f59593381a5736cd6e081bffa10b3772a353[m
+Author: Deana Briggs <145316150+deanabriggs@users.noreply.github.com>
+Date:   Thu Dec 4 16:53:46 2025 -0800
+
+    updated default categories
+
+[33mcommit 19b3c6805b52976babca3b1aed16d849532b6b65[m
+Author: Deana Briggs <145316150+deanabriggs@users.noreply.github.com>
+Date:   Thu Dec 4 16:48:53 2025 -0800
+
+    Added new categories: Auto Payments and Donations to the Categories page.
+
+[33mcommit 096900bdd1fecc1f3e6022e1f7dd56c518488e20[m
+Author: Deana Briggs <145316150+deanabriggs@users.noreply.github.com>
+Date:   Thu Dec 4 12:45:54 2025 -0800
+
+    Added Categories
+
+[33mcommit d9f1bf11be1102665b07e7118df5c0e552d8ddb8[m
+Author: Deana Briggs <145316150+deanabriggs@users.noreply.github.com>
+Date:   Thu Dec 4 11:43:47 2025 -0800
+
+    working application
+
+[33mcommit cedc4cac43aae55e4ce1171b537efec215c1729a[m
+Merge: 3b32ea6 f2c2691
+Author: Humphreys, Zachary <hum23003@byui.edu>
+Date:   Thu Dec 4 14:21:04 2025 +0000
+
+    Merged PR 3: CSV file basic import
+    
+    Does as the title states; it adds a basic window for importing several transactions. Still needs to be integrated with Deana's categories and needs to add to the debt if it's a credit transaction.
+
+[33mcommit f2c26915c15a79e2efc857595aa49bf560588097[m[33m ([m[1;31morigin/zh-import-csv-file[m[33m, [m[1;32mzh-import-csv-file[m[33m)[m
+Author: zaphrey <zachary.humphreys32@gmail.com>
+Date:   Thu Dec 4 08:52:57 2025 -0500
+
+    cleared unnecessary obj files
+
+[33mcommit 833c4981afa3b62551c485ecc78c236f77b36de3[m
+Author: zaphrey <zachary.humphreys32@gmail.com>
+Date:   Wed Nov 26 19:59:01 2025 -0500
+
+    Added basic .csv file import feature
+
+[33mcommit 3b32ea6cc770ae2b7a7246f201083a7ec2f0da2a[m
+Author: elorajm <eloraathias@gmail.com>
+Date:   Sun Nov 23 21:30:21 2025 -0600
+
+    Budget App
+
+[33mcommit fd910a0647646b09da16b1c4c1b61645ea06a93c[m
+Author: Cameron Woodward <woo23017@byui.edu>
+Date:   Fri Nov 21 17:55:54 2025 -0700
+
+    Add some styles
+
+[33mcommit 5f57a53d05be781ea1314abaf8fbd940097c3a6c[m
+Author: Cameron Woodward <woo23017@byui.edu>
+Date:   Fri Nov 21 16:50:30 2025 -0700
+
+    Finished Totals, expenses, and budgets
+
+[33mcommit f788a00fb3093351a5ebdb6d1e4c43d95620a7ec[m[33m ([m[1;31morigin/elora[m[33m)[m
+Merge: e87255b 4fc5e45
+Author: Humphreys, Zachary <hum23003@byui.edu>
+Date:   Fri Nov 21 00:45:23 2025 +0000
+
+    Merged PR 2: ASP.NET identity integration and manual transaction add, update, and delete features
+
+[33mcommit 4fc5e45b1f559d496ecc4105ab2bdbb13733737e[m[33m ([m[1;31morigin/zh-authentication[m[33m, [m[1;32mzh-authentication[m[33m)[m
+Author: zaphrey <zachary.humphreys32@gmail.com>
+Date:   Thu Nov 20 19:36:17 2025 -0500
+
+    Added manual transaction add, update, and delete functionality
+
+[33mcommit e87255ba574ae44d39824f804ada113cad6ece3b[m
+Author: Cameron Woodward <woo23017@byui.edu>
+Date:   Thu Nov 13 18:22:40 2025 -0700
+
+    BudgetDashboard
+
+[33mcommit 93de7ebefbe631b904bfd41e4954a94bf6738707[m
+Author: zaphrey <zachary.humphreys32@gmail.com>
+Date:   Thu Nov 13 17:08:08 2025 -0500
+
+    Added cascading authentication state which properly redirects the user to protected page after logging in
+
+[33mcommit 69ff6a2ef47c9eb91461fc14b8197d1e53f8ec49[m
+Author: zaphrey <zachary.humphreys32@gmail.com>
+Date:   Wed Nov 12 14:52:35 2025 -0500
+
+    Added ASP.NET core functionality and pages. Still needs to recognize when a user has actually logged in and is trying to visit authorized pages however.
+
+[33mcommit 8d651077008f1ce5f2559b86b802899b8c007cde[m
+Author: zaphrey <zachary.humphreys32@gmail.com>
+Date:   Wed Nov 12 14:51:10 2025 -0500
+
+    Added ASP.NET core functionality and pages. Still needs to recognize when a user has actually logged in and is trying to visit authorized pages however.
+
+[33mcommit 17cdd435abf5b7ec4ec2b701cef5de600303a319[m
+Merge: c29f45e a4a4ed6
+Author: Humphreys, Zachary <hum23003@byui.edu>
+Date:   Fri Nov 7 00:52:35 2025 +0000
+
+    Merged PR 1: Remade the project in .NET9.0
+    
+    Remade the project in .NET9.0
+
+[33mcommit a4a4ed6cd61be9a663e5d3590df77cb2a2b71f31[m
+Author: zaphrey <zachary.humphreys32@gmail.com>
+Date:   Thu Nov 6 19:52:12 2025 -0500
+
+    Remade the project in .NET9.0
+
+[33mcommit c29f45e0cb7e95f4467c3bc40da67242e7d7f21b[m[33m ([m[1;32mmaster[m[33m)[m
+Author: zaphrey <zachary.humphreys32@gmail.com>
+Date:   Thu Nov 6 17:13:12 2025 -0500
+
+    Initialized new Blazor web app
+
+[33mcommit ab76fcc1e041f042afbb3941ef48ee478ef8ef31[m
+Author: zaphrey <zachary.humphreys32@gmail.com>
+Date:   Thu Oct 9 20:01:30 2025 -0400
+
+    Added project proposals
+
+[33mcommit 82a88ddf8c2d5b5b9832b89feacbd181e3a7a42a[m
+Author: zaphrey <zachary.humphreys32@gmail.com>
+Date:   Thu Oct 9 19:16:32 2025 -0400
+
+    First commit
