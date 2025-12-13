@@ -68,7 +68,7 @@ else
                                 <span>@incomeProgress.ToString("0")%</span>
                             </div>
                             <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-success" role="progressbar" style="width: @incomeProgress%"></div>
+                                <div class="progress-bar bg-success" aria-label="progress bar" role="progressbar" style="width: @incomeProgress%"></div>
                             </div>
                         </div>
                     }
@@ -103,7 +103,8 @@ else
                                 <span>@expenseProgress.ToString("0")%</span>
                             </div>
                             <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: @expenseProgress%"></div>
+                                <div class="progress-bar bg-danger" aria-label="progress bar" role="progressbar"
+                                    style="width: @expenseProgress%"></div>
                             </div>
                         </div>
                     }
@@ -155,7 +156,7 @@ else
                         @if (incomeBudgets.Count > 0)
                         {
                             <div class="mb-4">
-                                <h6 class="px-3 mb-2 fw-bold">Income Categories</h6>
+                                <caption class="h6 px-3 mb-2 fw-bold w-100">Income Categories</caption>
                                 <table class="table mb-0">
                                     <thead>
                                         <tr>
@@ -188,7 +189,7 @@ else
                         @if (expenseBudgets.Count > 0)
                         {
                             <div>
-                                <h6 class="px-3 mb-2 fw-bold">Expense Categories</h6>
+                                <caption class="h6 px-3 mb-2 fw-bold w-100">Expense Categories</caption>
                                 <table class="table mb-0">
                                     <thead>
                                         <tr>
@@ -256,11 +257,12 @@ else
                         <EditForm Model="@QuickTransaction" OnValidSubmit="@SaveQuickTransaction">
                             <DataAnnotationsValidator />
 
-                            <label>Date*</label>
-                            <InputDate required aria-required="true" class="form-control mb-2" @bind-Value="@QuickTransaction.Date" />
+                            <label for="quick-transaction-date">Date*</label>
+                            <InputDate required aria-required="true" id="quick-transaction-date" class="form-control mb-2" @bind-Value="@QuickTransaction.Date" />
 
-                            <label>Account*</label>
-                            <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="@QuickTransaction.AccountId">
+                            <label for="quick-transaction-account">Account*</label>
+                            <InputSelect required aria-required="true" id="quick-transaction-account"
+                                class="form-select mb-2" @bind-Value="@QuickTransaction.AccountId">
                                 <option value="0">-- Select an option --</option>
                                 @foreach (var account in UserAccounts)
                                 {
@@ -269,8 +271,10 @@ else
                             </InputSelect>
 
 
-                            <label>Source</label>
-                            <InputText class="form-control mb-2" placeholder="Merchant, vendor, employer, etc." list="quickSourceList" @bind-Value="@QuickTransaction.Source" />
+                            <label for="quick-transaction-source">Source</label>
+                            <InputText class="form-control mb-2" id="quick-transaction-source"
+                                placeholder="Merchant, vendor, employer, etc." list="quickSourceList"
+                                @bind-Value="@QuickTransaction.Source" />
                             <datalist id="quickSourceList">
                                 @foreach (var source in availableSources)
                                 {
@@ -278,8 +282,9 @@ else
                                 }
                             </datalist>
 
-                            <label>Category*</label>
-                            <InputSelect required aria-required="true" class="form-select mb-2" @bind-Value="@QuickTransaction.CategoryId">
+                            <label for="quick-transaction-category">Category*</label>
+                            <InputSelect required aria-required="true" id="quick-transaction-category"
+                                class="form-select mb-2" @bind-Value="@QuickTransaction.CategoryId">
                                 <option value="0">-- Select a category --</option>
                                 @foreach (var category in availableCategories)
                                 {
@@ -287,11 +292,13 @@ else
                                 }
                             </InputSelect>
 
-                            <label>Amount*</label>
-                            <InputNumber required aria-required="true" class="form-control mb-2" @bind-Value="@QuickTransaction.Amount" />
+                            <label for="quick-transaction-amount">Amount*</label>
+                            <InputNumber required aria-required="true" id="quick-transaction-amount"
+                                class="form-control mb-2" @bind-Value="@QuickTransaction.Amount" />
 
-                            <label>Description</label>
-                            <InputText class="form-control mb-2" placeholder="Additional notes or details" @bind-Value="@QuickTransaction.Description" />
+                            <label for="quick-transaction-description">Description</label>
+                            <InputText class="form-control mb-2" id="quick-transaction-description"
+                                placeholder="Additional notes or details" @bind-Value="@QuickTransaction.Description" />
  
                             @{
                                 var isFormValid = QuickTransaction.AccountId > 0 
@@ -394,10 +401,11 @@ else
             <div class="card shadow-sm flex-fill">
                 <div class="card-header d-flex justify-content-between">
                     <strong>Recent Transactions</strong>
-                    <a href="/accounts" class="small">View all</a>
+                    <a href="/accounts" class="small btn btn-primary p-1 text-light rounded">View all</a>
                 </div>
                 <div class="card-body">
-                    <input class="form-control mb-2"
+                    <label for="search">Search</label>
+                    <input class="form-control mb-2" id="search"
                            placeholder="Search..."
                            @bind="TransactionSearch" />
 
