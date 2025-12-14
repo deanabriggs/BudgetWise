@@ -92,7 +92,7 @@ namespace BudgetWise.Areas.Identity.Pages.Account
                 ModelState.AddModelError(string.Empty, ErrorMessage);
             }
 
-            returnUrl ??= Url.Content("~/");
+            returnUrl ??= "/";
 
             // Clear the existing external cookie to ensure a clean login process
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
@@ -104,7 +104,9 @@ namespace BudgetWise.Areas.Identity.Pages.Account
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/");
+            // Get returnUrl from query string if not provided as parameter
+            returnUrl ??= Request.Query["returnUrl"].ToString();
+            returnUrl ??= "/";
 
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
@@ -116,7 +118,12 @@ namespace BudgetWise.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
-                    return LocalRedirect(returnUrl);
+                    // Use Redirect instead of LocalRedirect to ensure proper navigation
+                    if (Url.IsLocalUrl(returnUrl))
+                    {
+                        return Redirect(returnUrl);
+                    }
+                    return Redirect("/");
                 }
                 if (result.RequiresTwoFactor)
                 {
@@ -129,7 +136,7 @@ namespace BudgetWise.Areas.Identity.Pages.Account
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError(string.Empty, "Invalid login attempt. Please check your email and password, or register as a new user.");
                     return Page();
                 }
             }

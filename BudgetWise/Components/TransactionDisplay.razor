@@ -38,7 +38,8 @@
         </div>
         <div class="col-md-2 col-5 text-truncate text-end">
             @{
-                NumberFormatInfo numberFormat = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
+                var usCulture = CultureInfo.GetCultureInfo("en-US");
+                NumberFormatInfo numberFormat = (NumberFormatInfo)usCulture.NumberFormat.Clone();
                 numberFormat.CurrencyNegativePattern = 1;
             }
             <span class="@(Transaction.Category != null && !Transaction.Category.IsIncome ? "text-danger" : "text-success") text-truncate">
@@ -155,7 +156,8 @@
 
         <div class="mb-3">
             @{
-                NumberFormatInfo numberFormat = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
+                var usCulture = CultureInfo.GetCultureInfo("en-US");
+                NumberFormatInfo numberFormat = (NumberFormatInfo)usCulture.NumberFormat.Clone();
                 numberFormat.CurrencyNegativePattern = 1;
             }
 

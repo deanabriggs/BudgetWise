@@ -1,0 +1,6 @@
+# flyctl launch added from .gitignore
+**\budgetwise.db
+**\bin
+**\obj
+**\global.json
+fly.toml

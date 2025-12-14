@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model LoginModel
 
 @{
@@ -11,8 +11,24 @@
         <div class="col-md-4">
             <section>
                 <form id="account" method="post">
+                    <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
                     <h2>Use a local account to log in.</h2>
                     <hr />
+                    @if (ViewData.ModelState[string.Empty]?.Errors.Count > 0)
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <h5 class="alert-heading"><strong>Login Failed</strong></h5>
+                            <p class="mb-3">@ViewData.ModelState[string.Empty].Errors[0].ErrorMessage</p>
+                            <div class="d-flex gap-2 justify-content-center flex-wrap">
+                                <button type="button" class="btn btn-outline-primary" onclick="clearForm();">
+                                    Try Again
+                                </button>
+                                <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="btn btn-primary">
+                                    Register as New User
+                                </a>
+                            </div>
+                        </div>
+                    }
                     <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
                     <div class="form-floating mb-3">
                         <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
@@ -47,4 +63,13 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        function clearForm() {
+            document.getElementById('account').reset();
+            var emailInput = document.querySelector('input[name="Input.Email"]');
+            if (emailInput) {
+                emailInput.focus();
+            }
+        }
+    </script>
 }
