@@ -23,8 +23,11 @@ The project focuses on core functionality, usability and clean organization.
 
 ## Project Links
 
-* **Live Application (Azure):**
+* **Repository (Azure):**
 https://dev.azure.com/CSE-325-BudgetWise-CAE/_git/ctrl-alt-elite-project
+
+* **Trello Board (Azure):**
+https://dev.azure.com/CSE-325-BudgetWise-CAE/ctrl-alt-elite-project/_boards/board/t/ctrl-alt-elite-project%20Team/Issues
 
 * **Project Demonstration Video (YouTube):**
 https://youtu.be/AS2cN6RGXbk
@@ -38,11 +41,12 @@ BudgetWise is designed for individuals and students who want a simple and organi
 ## Main Features
 
 * Secure user registration and login
-* Income tracking with add, edit, and delete functionality
+* Income tracking with view, add, edit, and delete functionality
 * Budget and category management
 * Transaction tracking
 * Debt tracking
 * Data stored securely in a database
+
 
 ---
 
@@ -57,8 +61,8 @@ BudgetWise is designed for individuals and students who want a simple and organi
 ## Accessibility and Usability
 
 * Clear and consistent navigation
-* Proper labels on form inputs
-* Responsive layout for desktop and mobile devices
+* Proper labels on form inputs for those that are visually impaired or for form reading accessibility
+* Responsive layout for web app
 
 ---
 
@@ -77,7 +81,7 @@ BudgetWise is designed for individuals and students who want a simple and organi
 
 ### Requirements
 
-* .NET SDK 8.0 or later
+* .NET SDK 8.0 
 * Visual Studio or VS Code
 
 ### Steps
@@ -93,6 +97,7 @@ dotnet run
 ## Deployment
 
 BudgetWise is deployed using Microsoft Azure App Service. Azure was selected because it fully supports ASP.NET Core and Blazor Server applications.
+
 
 ---
 
