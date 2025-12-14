@@ -121,16 +121,28 @@ else
         <div class="card mb-4">
             <div class="card-header justify-content-between w-100">
                 <div class="row w-100 align-items-center m-0 p-0">
-                    <div class="d-flex flex-column col-lg-10 col-8">
+                    <div class="d-flex flex-column col-lg-8 col-6">
                         <p class="h5 mb-0">@selectedAccount.Name</p>
                         <small class="text-muted">@selectedAccount.Type</small>
                     </div>
-                    <div class="col-lg-2 col-4 align-items-end">
-                        <button id="back-to-accounts"
-                            class="btn btn-sm btn-outline-secondary d-block w-100"
-                            @onclick="BackToAccounts">
-                            Back
-                        </button>
+                    <div class="col-lg-4 col-6 align-items-end">
+                        <div class="d-flex gap-2">
+                            <button id="edit-account"
+                                class="btn btn-sm btn-outline-primary d-block w-100"
+                                @onclick="OpenEditAccountModal">
+                                Edit
+                            </button>
+                            <button id="delete-account"
+                                class="btn btn-sm btn-outline-danger d-block w-100"
+                                @onclick="OpenDeleteAccountModal">
+                                Delete
+                            </button>
+                            <button id="back-to-accounts"
+                                class="btn btn-sm btn-outline-secondary d-block w-100"
+                                @onclick="BackToAccounts">
+                                Back
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -249,6 +261,57 @@ else
             </button>
             <button type="submit" class="btn btn-primary" disabled="@IsBusy">
                 @(IsBusy ? "Saving..." : "Save")
+            </button>
+        </div>
+    </EditForm>
+</SimpleModal>
+
+<!-- Edit Account Modal -->
+<SimpleModal IsOpen="@IsEditAccountModalOpen"
+             Title="Edit Account"
+             OnClose="CloseEditAccountModal">
+    <EditForm Model="@editAccount" OnValidSubmit="@SaveEditedAccount">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="editAccountType" class="form-label">Account Type</label>
+            <InputSelect id="editAccountType"
+                         class="form-select"
+                         @bind-Value="editAccount.Type">
+                <option value="@AccountType.Checking">Checking</option>
+                <option value="@AccountType.Savings">Savings</option>
+                <option value="@AccountType.Cash">Cash</option>
+                <option value="@AccountType.Retirement">Retirement</option>
+                <option value="@AccountType.CreditCard">Credit Card</option>
+                <option value="@AccountType.Loan">Loan</option>
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label for="editAccountName" class="form-label">Account Name</label>
+            <InputText id="editAccountName"
+                       class="form-control"
+                       @bind-Value="editAccount.Name" />
+        </div>
+
+        <div class="mb-3">
+            <label for="editStartingBalance" class="form-label">Starting Balance</label>
+            <InputNumber id="editStartingBalance"
+                         class="form-control"
+                         @bind-Value="editAccount.StartingBalance" />
+            <small class="form-text text-muted">
+                Changing the starting balance will recalculate the current balance.
+            </small>
+        </div>
+
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-secondary me-2"
+                    @onclick="CloseEditAccountModal" disabled="@IsBusy">
+                Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" disabled="@IsBusy">
+                @(IsBusy ? "Saving..." : "Save Changes")
             </button>
         </div>
     </EditForm>
@@ -398,14 +461,21 @@ else
                        @bind-Value="editTransaction.Description" />
         </div>
 
-        <div class="d-flex justify-content-end">
-            <button type="button" class="btn btn-secondary me-2"
-                    @onclick="CloseEditTransactionModal" disabled="@IsBusy">
-                Cancel
+        <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-danger"
+                    @onclick="() => { CloseEditTransactionModal(); OpenDeleteTransactionModal(editTransaction); }" 
+                    disabled="@IsBusy">
+                Delete
             </button>
-            <button type="submit" class="btn btn-primary" disabled="@IsBusy">
-                @(IsBusy ? "Saving..." : "Save Changes")
-            </button>
+            <div>
+                <button type="button" class="btn btn-secondary me-2"
+                        @onclick="CloseEditTransactionModal" disabled="@IsBusy">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" disabled="@IsBusy">
+                    @(IsBusy ? "Saving..." : "Save Changes")
+                </button>
+            </div>
         </div>
     </EditForm>
 </SimpleModal>
@@ -438,6 +508,40 @@ else
     }
 </SimpleModal>
 
+<!-- Delete Account Modal -->
+<SimpleModal IsOpen="@IsDeleteAccountModalOpen"
+             Title="Delete Account"
+             OnClose="CloseDeleteAccountModal">
+    @if (selectedAccount is not null)
+    {
+        <p>Are you sure you want to delete this account?</p>
+        <ul>
+            <li><strong>Name:</strong> @selectedAccount.Name</li>
+            <li><strong>Type:</strong> @selectedAccount.Type</li>
+            <li><strong>Current Balance:</strong> @selectedAccount.CurrentBalance.ToString("C")</li>
+            <li><strong>Transactions:</strong> @accountTransactions.Count</li>
+        </ul>
+        @if (accountTransactions.Count > 0)
+        {
+            <div class="alert alert-warning" role="alert">
+                <strong>Warning:</strong> This account has @accountTransactions.Count transaction(s). 
+                All transactions will be permanently deleted along with the account.
+            </div>
+        }
+
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-secondary me-2"
+                    @onclick="CloseDeleteAccountModal" disabled="@IsBusy">
+                Cancel
+            </button>
+            <button type="button" class="btn btn-danger"
+                    @onclick="DeleteAccount" disabled="@IsBusy">
+                @(IsBusy ? "Deleting..." : "Delete Account")
+            </button>
+        </div>
+    }
+</SimpleModal>
+
 <style>
     a:focus, button:focus, input:focus, select:focus {
         outline: 3px solid #ffeb3b;
@@ -454,14 +558,17 @@ else
     private List<string> availableSources = new();
 
     private Account newAccount = new();
+    private Account editAccount = new();
     private UserTransaction newTransaction = new();
     private UserTransaction editTransaction = new();
     private UserTransaction? deleteTarget;
 
     private bool IsAddAccountModalOpen { get; set; }
+    private bool IsEditAccountModalOpen { get; set; }
     private bool IsAddTransactionModalOpen { get; set; }
     private bool IsEditTransactionModalOpen { get; set; }
     private bool IsDeleteTransactionModalOpen { get; set; }
+    private bool IsDeleteAccountModalOpen { get; set; }
 
     private bool IsBusy { get; set; }
     private string? ErrorMessage { get; set; }
@@ -582,12 +689,20 @@ else
 
     private async Task RecalculateAccountBalance(int accountId)
     {
+        if (user is null) return;
+        
         var account = await Context.Accounts.FindAsync(accountId);
         if (account is null) return;
 
+        // Verify the account belongs to the current user
+        if (account.UserId != user.Id)
+        {
+            return; // Silently skip accounts that don't belong to the user
+        }
+
         var transactions = await Context.UserTransactions
             .Include(t => t.Category)
-            .Where(t => t.AccountId == accountId)
+            .Where(t => t.AccountId == accountId && t.UserId == user.Id)
             .ToListAsync();
 
         // Calculate balance based on account type
@@ -636,13 +751,20 @@ else
 
     private async Task LoadAccountTransactions()
     {
-        if (selectedAccount is null) return;
+        if (selectedAccount is null || user is null) return;
+
+        // Verify the account belongs to the current user
+        if (selectedAccount.UserId != user.Id)
+        {
+            ErrorMessage = "You do not have permission to view this account.";
+            return;
+        }
 
         try
         {
             accountTransactions = await Context.UserTransactions
                 .Include(t => t.Category)
-                .Where(t => t.AccountId == selectedAccount.Id)
+                .Where(t => t.AccountId == selectedAccount.Id && t.UserId == user.Id)
                 .OrderByDescending(t => t.Date)
                 .ThenByDescending(t => t.Id)
                 .ToListAsync();
@@ -696,6 +818,92 @@ else
         catch (Exception ex)
         {
             ErrorMessage = $"Error saving account: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void OpenEditAccountModal()
+    {
+        if (selectedAccount is null) return;
+        SuccessMessage = ErrorMessage = null;
+        
+        // Create a copy of the selected account for editing
+        editAccount = new Account
+        {
+            Id = selectedAccount.Id,
+            UserId = selectedAccount.UserId,
+            Name = selectedAccount.Name,
+            Type = selectedAccount.Type,
+            StartingBalance = selectedAccount.StartingBalance,
+            CurrentBalance = selectedAccount.CurrentBalance
+        };
+        
+        IsEditAccountModalOpen = true;
+    }
+
+    private void CloseEditAccountModal() => IsEditAccountModalOpen = false;
+
+    private async Task SaveEditedAccount()
+    {
+        if (user is null || selectedAccount is null) return;
+        IsBusy = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        try
+        {
+            // Load existing account from database
+            var existingAccount = await Context.Accounts.FindAsync(editAccount.Id);
+            if (existingAccount == null)
+            {
+                ErrorMessage = "Account not found.";
+                IsBusy = false;
+                return;
+            }
+
+            // Verify the account belongs to the current user
+            if (existingAccount.UserId != user.Id)
+            {
+                ErrorMessage = "You do not have permission to edit this account.";
+                IsBusy = false;
+                return;
+            }
+
+            // Store the old starting balance to check if it changed
+            var oldStartingBalance = existingAccount.StartingBalance;
+            var startingBalanceChanged = oldStartingBalance != editAccount.StartingBalance;
+
+            // Update account properties
+            existingAccount.Name = editAccount.Name;
+            existingAccount.Type = editAccount.Type;
+            existingAccount.StartingBalance = editAccount.StartingBalance;
+
+            // Save changes first so RecalculateAccountBalance uses the new starting balance
+            await Context.SaveChangesAsync();
+
+            // If starting balance changed, recalculate current balance
+            if (startingBalanceChanged)
+            {
+                await RecalculateAccountBalance(existingAccount.Id);
+            }
+
+            SuccessMessage = "Account updated successfully.";
+            CloseEditAccountModal();
+            await LoadAccountsAsync();
+            
+            // Update selectedAccount to reflect changes
+            if (selectedAccount.Id == existingAccount.Id)
+            {
+                selectedAccount = await Context.Accounts.FindAsync(existingAccount.Id);
+                await LoadAccountTransactions();
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error updating account: {ex.Message}";
         }
         finally
         {
@@ -882,6 +1090,14 @@ else
                 return;
             }
 
+            // Verify the transaction belongs to the current user
+            if (existingTransaction.UserId != user.Id)
+            {
+                ErrorMessage = "You do not have permission to edit this transaction.";
+                IsBusy = false;
+                return;
+            }
+
             // Update only the necessary properties
             existingTransaction.UserId = user.Id;
             existingTransaction.AccountId = selectedAccount.Id;
@@ -972,6 +1188,71 @@ else
         
         StateHasChanged();
         return;
+    }
+
+    private void OpenDeleteAccountModal()
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+        IsDeleteAccountModalOpen = true;
+    }
+
+    private void CloseDeleteAccountModal()
+    {
+        IsDeleteAccountModalOpen = false;
+    }
+
+    private async Task DeleteAccount()
+    {
+        if (user is null || selectedAccount is null) return;
+        IsBusy = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        try
+        {
+            // Verify the account belongs to the current user
+            var existingAccount = await Context.Accounts
+                .FirstOrDefaultAsync(a => a.Id == selectedAccount.Id && a.UserId == user.Id);
+
+            if (existingAccount is null)
+            {
+                ErrorMessage = "Account not found or you do not have permission to delete it.";
+                IsBusy = false;
+                return;
+            }
+
+            // Delete all transactions associated with this account first
+            var transactionsToDelete = await Context.UserTransactions
+                .Where(t => t.AccountId == existingAccount.Id && t.UserId == user.Id)
+                .ToListAsync();
+
+            if (transactionsToDelete.Any())
+            {
+                Context.UserTransactions.RemoveRange(transactionsToDelete);
+                await Context.SaveChangesAsync();
+            }
+
+            // Now delete the account
+            Context.Accounts.Remove(existingAccount);
+            await Context.SaveChangesAsync();
+
+            SuccessMessage = "Account deleted successfully.";
+            CloseDeleteAccountModal();
+            
+            // Navigate back to accounts list
+            selectedAccount = null;
+            accountTransactions.Clear();
+            await LoadAccountsAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error deleting account: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 }
 

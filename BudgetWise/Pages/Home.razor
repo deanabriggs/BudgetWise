@@ -156,7 +156,7 @@ else
                         @if (incomeBudgets.Count > 0)
                         {
                             <div class="mb-4">
-                                <caption class="h6 px-3 mb-2 fw-bold w-100">Income Categories</caption>
+                                <caption class="h6 px-3 mb-2 fw-bold w-100">INCOME</caption>
                                 <table class="table mb-0">
                                     <thead>
                                         <tr>
@@ -189,7 +189,7 @@ else
                         @if (expenseBudgets.Count > 0)
                         {
                             <div>
-                                <caption class="h6 px-3 mb-2 fw-bold w-100">Expense Categories</caption>
+                                <caption class="h6 px-3 mb-2 fw-bold w-100">EXPENSES</caption>
                                 <table class="table mb-0">
                                     <thead>
                                         <tr>
@@ -232,14 +232,14 @@ else
                     <div class="card-body">
                         <strong>Total Assets</strong>
                         <div>
-                            $@TotalAssets
+                            $@TotalAssets.ToString("N2")
                         </div>
 
                         <div class="mb-4"></div>
 
                         <strong>Total Debts</strong>
                         <div>
-                            $@TotalDebts
+                            $@TotalDebts.ToString("N2")
                         </div>
                         
                         <br/>
@@ -374,8 +374,8 @@ else
                             <thead>
                                 <tr>
                                     <th>Day</th>
-                                    <th>Income</th>
-                                    <th>Expenses</th>
+                                    <th class="text-end">Income</th>
+                                    <th class="text-end">Expenses</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -383,8 +383,8 @@ else
                                 {
                                     <tr>
                                         <td>@d.Day</td>
-                                        <td class="text-success">@d.Income.ToString("C")</td>
-                                        <td class="text-danger">@d.Expenses.ToString("C")</td>
+                                        <td class="text-success text-end">@d.Income.ToString("C")</td>
+                                        <td class="text-danger text-end">@d.Expenses.ToString("C")</td>
                                     </tr>
                                 }
                             </tbody>

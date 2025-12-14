@@ -520,6 +520,14 @@ else
                     return;
                 }
 
+                // Verify the budget belongs to the current user
+                if (existingBudget.UserId != user!.Id)
+                {
+                    ErrorMessage = "You do not have permission to edit this budget.";
+                    IsBusy = false;
+                    return;
+                }
+
                 existingBudget.CategoryId = editBudget.CategoryId;
                 existingBudget.Month = editBudget.Month;
                 existingBudget.Year = editBudget.Year;
@@ -564,7 +572,21 @@ else
 
         try
         {
-            Context.Budgets.Remove(b);
+            // Verify the budget belongs to the current user
+            var existingBudget = await Context.Budgets.FindAsync(b.Id);
+            if (existingBudget == null)
+            {
+                ErrorMessage = "Budget not found.";
+                return;
+            }
+
+            if (existingBudget.UserId != user.Id)
+            {
+                ErrorMessage = "You do not have permission to delete this budget.";
+                return;
+            }
+
+            Context.Budgets.Remove(existingBudget);
             await Context.SaveChangesAsync();
 
             SuccessMessage = "Budget deleted.";

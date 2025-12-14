@@ -266,6 +266,12 @@
                 return;
             }
 
+            // Verify the transaction belongs to the current user
+            if (existingTransaction.UserId != User.Id)
+            {
+                return; // Silently fail if user doesn't own the transaction
+            }
+
             // Update only the necessary properties
             existingTransaction.CategoryId = Transaction.CategoryId;
             existingTransaction.Date = Transaction.Date;
@@ -299,7 +305,14 @@
         }
         try
         {
-            Context.UserTransactions.Remove(Transaction);
+            // Verify the transaction belongs to the current user
+            var existingTransaction = await Context.UserTransactions.FindAsync(Transaction.Id);
+            if (existingTransaction == null || existingTransaction.UserId != User.Id)
+            {
+                return; // Silently fail if transaction doesn't exist or doesn't belong to user
+            }
+
+            Context.UserTransactions.Remove(existingTransaction);
             await Context.SaveChangesAsync();
         }
         catch (Exception)
