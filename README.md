@@ -117,4 +117,4 @@ BudgetWise is deployed using Microsoft Azure App Service. Azure was selected bec
 
 ## Conclusion
 
-BudgetWise is a complete and functional .NET Blazor Server application that demonstrates core web development concepts, teamwork, and real-world application design. The project meets the requirements of the group project assignment.
+BudgetWise is a complete and functional .NET Blazor Server application that demonstrates core web development concepts, teamwork, and real-world application design. 
