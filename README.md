@@ -23,8 +23,8 @@ The project focuses on core functionality, usability and clean organization.
 
 ## Project Links
 
-- **Repository (Azure):**
-  https://dev.azure.com/CSE-325-BudgetWise-CAE/_git/ctrl-alt-elite-project
+- **Repository (GitHub):**
+  https://github.com/deanabriggs/BudgetWise
 
 - **Trello Board (Azure):**
   https://dev.azure.com/CSE-325-BudgetWise-CAE/ctrl-alt-elite-project/_boards/board/t/ctrl-alt-elite-project%20Team/Issues
