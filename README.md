@@ -1,142 +1,130 @@
 # BudgetWise
 
-## Overview
+> A full-stack personal-finance web app for planning budgets, recording income and expenses across accounts, and seeing it all come together on a live dashboard.
 
-BudgetWise is a .NET Blazor Server web application created as a group project to demonstrate practical skills in the .NET development ecosystem. The application allows users to manage personal finances by tracking income, budgets, transactions, and debts.
-
-The project focuses on core functionality, usability and clean organization.
-
----
-
-## Team Information
-
-**Team Name:** ctrl-alt-elite
-
-**Team Members:**
-
-- Deana Briggs
-- Zachary Humphreys
-- Elora Mathias
-- Cam Woodward
-
----
-
-## Project Links
+**🔗 Live demo:** https://budgetwise.fly.dev &nbsp;•&nbsp; **💻 Source:** https://github.com/deanabriggs/BudgetWise
 
 <!--
-  ORIGINAL (team Azure DevOps repo, access lost after course ended):
-  - **Repository (Azure):**
-    https://dev.azure.com/CSE-325-BudgetWise-CAE/_git/ctrl-alt-elite-project
-  Replaced with the GitHub repo below, which Deana owns, for the portfolio copy.
+  ORIGINAL (team Azure DevOps repo, access lost after the course ended):
+  https://dev.azure.com/CSE-325-BudgetWise-CAE/_git/ctrl-alt-elite-project
+  Replaced with the GitHub repo above, which Deana owns, for the portfolio copy.
 -->
-- **Repository (GitHub):**
-  https://github.com/deanabriggs/BudgetWise
-
-- **Trello Board (Azure):**
-  https://dev.azure.com/CSE-325-BudgetWise-CAE/ctrl-alt-elite-project/_boards/board/t/ctrl-alt-elite-project%20Team/Issues
-
-- **Project Demonstration Video (YouTube):**
-  https://youtu.be/AS2cN6RGXbk
-
-<!-- ORIGINAL: this field was left blank in the team README. -->
-- **Website (Fly.io):**
-  https://budgetwise.fly.dev
 
 ---
 
-## Target Audience
+## Overview
 
-## BudgetWise is designed for individuals and students who want a simple and organized way to manage personal finances.
+BudgetWise is a .NET 8 **Blazor Server** application for managing personal finances. The core idea is a simple budgeting loop: **plan** what you intend to earn and spend (budgets), **record** what actually happens (transactions across your accounts), and **review** the cumulative results on a reporting dashboard.
 
-## Main Features
+It is designed for individuals and students who want a clean, organized way to track their money without a spreadsheet.
 
-- Secure user registration and login
-- Income tracking with view, add, edit, and delete functionality
-- Budget and category management
-- Transaction tracking
-- Debt tracking
-- Data stored securely in a database
+## Try it in 30 seconds
 
----
+1. Open the **[live demo](https://budgetwise.fly.dev)** and register an account (no email confirmation required).
+2. On the dashboard, click **“Load demo data.”**
+3. Instantly explore a fully populated app — sample accounts, a month of transactions, budgets, and charts — then click **“Remove demo data”** to clear it.
 
-## Error Handling and Validation
+> The one-click demo seeder lets a first-time visitor see every feature working without entering any data by hand.
 
-- Required fields are validated before saving
-- Invalid or missing input is prevented
-- Errors are handled safely to avoid application crashes
+## Features
 
----
+**Accounts & balances**
+- Six account types — Checking, Savings, Cash, Retirement, Credit Card, and Loan — grouped into assets vs. debts.
+- Balances are recalculated automatically from each account’s transactions.
 
-## Accessibility and Usability
+**Transactions**
+- Add, edit, and delete transactions tied to a specific account and category, with a reusable “source” (merchant/employer) autocomplete.
+- Bulk **import** transactions through an import dialog.
 
-- Clear and consistent navigation
-- Proper labels on form inputs for those that are visually impaired or for form reading accessibility
-- Responsive layout for web app
+**Budgets (the “plan”)**
+- Set monthly spending limits per category, for both income and expense categories.
+- Compare planned vs. actual to see what’s remaining.
 
----
+**Categories**
+- A set of sensible default categories plus your own custom income/expense categories.
 
-## Technology Used
+**Dashboard (the “report”)**
+- Income, expense, and profit/loss KPIs with month-over-month comparison.
+- Budget progress, an estimated net-worth summary, spending-by-category breakdown, and a daily income/expense trend — rendered with **Chart.js**.
+- Searchable recent-transaction list and a quick-add form.
 
-- .NET 8
-- Blazor Server
-- ASP.NET Core
-- Entity Framework Core
-- SQLite
-- Bootstrap and CSS
+**Accounts, auth & data**
+- Secure registration, login, and account management via ASP.NET Core Identity.
+- Server-side validation and safe error handling throughout.
+- Responsive Bootstrap layout with accessibility-minded labels and focus styles.
 
----
+## Technology
 
-## How to Run the Project Locally
+| Area | Stack |
+| --- | --- |
+| Language / runtime | C#, .NET 8 |
+| Web framework | Blazor Server (interactive server components), ASP.NET Core, Razor Pages |
+| Authentication | ASP.NET Core Identity |
+| Data | Entity Framework Core 8 (code-first migrations), SQLite |
+| Front end | Bootstrap 5, custom CSS, Chart.js via JS interop |
+| Containerization | Docker (multi-stage build) |
+| Hosting | Fly.io (persistent volume for the SQLite database) |
+| CI/CD | GitHub Actions → automatic deploy to Fly.io on every push |
+| Source control | Git / GitHub (mirrored to Azure DevOps) |
 
-### Requirements
+## Architecture at a glance
 
-- .NET SDK 8.0
-- Visual Studio or VS Code
+- **Blazor Server** keeps UI logic on the server; the browser holds a lightweight connection and receives DOM updates over a websocket.
+- **EF Core** maps the domain model (`Account`, `UserTransaction`, `Budget`, `Category`) to SQLite, and **migrations are applied automatically on startup**, so the schema is always current.
+- All data is **scoped per user** via ASP.NET Core Identity.
+- The app is packaged with a **multi-stage Dockerfile** and deployed to **Fly.io**, where the SQLite database lives on a persistent volume so it survives restarts and redeploys.
 
-### Steps
+## Running locally
 
----
+**Requirements:** .NET SDK 8.0 and Visual Studio or VS Code.
 
-dotnet restore
-dotnet ef database update
-dotnet run
+```bash
+git clone https://github.com/deanabriggs/BudgetWise.git
+cd BudgetWise
+dotnet run --project BudgetWise
+```
 
----
+Then open the URL shown in the console (e.g. `http://localhost:5163`). The database is created and migrated automatically on first run — no manual `dotnet ef database update` step is required.
 
-## Deployment
+## Deployment & CI/CD
 
 <!--
   ORIGINAL (team README):
   BudgetWise is deployed using Microsoft Azure App Service. Azure was selected
   because it fully supports ASP.NET Core and Blazor Server applications.
 
-  Corrected below: the app was actually deployed on Fly.io (see Dockerfile and
+  Corrected below: the app is actually deployed on Fly.io (see Dockerfile and
   fly.toml). The "Azure" references in the team project were the Azure DevOps
   repo and Trello board (collaboration tools), not the app's runtime host.
 -->
-BudgetWise is deployed on Fly.io as a Docker container. The app runs from the included `Dockerfile`, with configuration in `fly.toml`, and uses a persistent volume to store its SQLite database across restarts.
+
+BudgetWise runs on **Fly.io** as a Docker container built from the included `Dockerfile`, configured via `fly.toml`, with its SQLite database on a persistent volume. A **GitHub Actions** workflow (`.github/workflows/fly-deploy.yml`) builds and deploys automatically on every push to `master`, so the live site stays in sync with the repository.
+
+## My role
+
+I took a **leading role across the full lifecycle** of this project:
+
+- **Concept** — originated the idea and shaped the budgeting/transaction/dashboard approach.
+- **Development** — built and integrated core features across the data model, Blazor UI, and EF Core data layer.
+- **Troubleshooting & testing** — diagnosed and resolved bugs, data-flow issues, and deployment failures, and validated behavior end-to-end.
+- **Editing & polishing** — refined the UI, cleaned up the data model (removing unused tables), and improved error handling and usability.
+- **Deployment** — containerized the app and set up hosting on Fly.io with an automated GitHub Actions CI/CD pipeline.
 
 ---
 
-## Team Collaboration
+<details>
+<summary>Project background &amp; credits</summary>
 
-- Source code managed using a shared repository
-- Tasks organized using a Trello board
-- Team members collaborated through planning, development, testing, and documentation
+<br>
 
----
+BudgetWise began as a group project for a .NET course (team **ctrl-alt-elite**) and is maintained here as a personal portfolio copy.
 
-## How This Project Meets Course Objectives
+**Team members:** Deana Briggs, Zachary Humphreys, Elora Mathias, Cam Woodward
 
-- Uses the .NET Blazor framework
-- Implements authentication and CRUD functionality
-- Integrates a database using Entity Framework Core
-- Follows usability and accessibility best practices
-- Demonstrates effective teamwork
-- Includes cloud deployment
+**Demonstration video:** https://youtu.be/AS2cN6RGXbk
 
----
+<!-- ORIGINAL team links retained for reference:
+     Trello board (Azure DevOps): https://dev.azure.com/CSE-325-BudgetWise-CAE/ctrl-alt-elite-project/_boards/board/t/ctrl-alt-elite-project%20Team/Issues
+     Website field was left blank in the original team README. -->
 
-## Conclusion
-
-BudgetWise is a complete and functional .NET Blazor Server application that demonstrates core web development concepts, teamwork, and real-world application design.
+</details>
