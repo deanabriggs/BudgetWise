@@ -1,0 +1,39 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+bld/
+[Bb]uild/
+
+# .NET
+project.lock.json
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# SQLite database files (created at runtime / per-deployment)
+*.db
+*.db-shm
+*.db-wal
+
+# Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+*.swp
+.idea/
+
+# Tooling / config that shouldn't be committed
+global.json
+
+# npm leftovers (no Node project here)
+node_modules/
+package-lock.json
+
+# Misc local artifacts
+tree.txt
+exit

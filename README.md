@@ -14,69 +14,68 @@ The project focuses on core functionality, usability and clean organization.
 
 **Team Members:**
 
-* Zachary Humphreys
-* Deana Briggs
-* Elora Mathias
-* Cam Woodward
+- Deana Briggs
+- Zachary Humphreys
+- Elora Mathias
+- Cam Woodward
 
 ---
 
 ## Project Links
 
-* **Repository (Azure):**
-https://dev.azure.com/CSE-325-BudgetWise-CAE/_git/ctrl-alt-elite-project
+- **Repository (Azure):**
+  https://dev.azure.com/CSE-325-BudgetWise-CAE/_git/ctrl-alt-elite-project
 
-* **Trello Board (Azure):**
-https://dev.azure.com/CSE-325-BudgetWise-CAE/ctrl-alt-elite-project/_boards/board/t/ctrl-alt-elite-project%20Team/Issues
+- **Trello Board (Azure):**
+  https://dev.azure.com/CSE-325-BudgetWise-CAE/ctrl-alt-elite-project/_boards/board/t/ctrl-alt-elite-project%20Team/Issues
 
-* **Project Demonstration Video (YouTube):**
-https://youtu.be/AS2cN6RGXbk
+- **Project Demonstration Video (YouTube):**
+  https://youtu.be/AS2cN6RGXbk
 
-* **Website (Fly.io):**
+- **Website (Fly.io):**
+  https://budgetwise.fly.dev
 
 ---
 
 ## Target Audience
 
-BudgetWise is designed for individuals and students who want a simple and organized way to manage personal finances. 
----
+## BudgetWise is designed for individuals and students who want a simple and organized way to manage personal finances.
 
 ## Main Features
 
-* Secure user registration and login
-* Income tracking with view, add, edit, and delete functionality
-* Budget and category management
-* Transaction tracking
-* Debt tracking
-* Data stored securely in a database
-
+- Secure user registration and login
+- Income tracking with view, add, edit, and delete functionality
+- Budget and category management
+- Transaction tracking
+- Debt tracking
+- Data stored securely in a database
 
 ---
 
 ## Error Handling and Validation
 
-* Required fields are validated before saving
-* Invalid or missing input is prevented
-* Errors are handled safely to avoid application crashes
+- Required fields are validated before saving
+- Invalid or missing input is prevented
+- Errors are handled safely to avoid application crashes
 
 ---
 
 ## Accessibility and Usability
 
-* Clear and consistent navigation
-* Proper labels on form inputs for those that are visually impaired or for form reading accessibility
-* Responsive layout for web app
+- Clear and consistent navigation
+- Proper labels on form inputs for those that are visually impaired or for form reading accessibility
+- Responsive layout for web app
 
 ---
 
 ## Technology Used
 
-* .NET 8
-* Blazor Server
-* ASP.NET Core
-* Entity Framework Core
-* SQLite
-* Bootstrap and CSS
+- .NET 8
+- Blazor Server
+- ASP.NET Core
+- Entity Framework Core
+- SQLite
+- Bootstrap and CSS
 
 ---
 
@@ -84,45 +83,44 @@ BudgetWise is designed for individuals and students who want a simple and organi
 
 ### Requirements
 
-* .NET SDK 8.0 
-* Visual Studio or VS Code
+- .NET SDK 8.0
+- Visual Studio or VS Code
 
 ### Steps
 
 ---
+
 dotnet restore
 dotnet ef database update
 dotnet run
-
 
 ---
 
 ## Deployment
 
-BudgetWise is deployed using Microsoft Azure App Service. Azure was selected because it fully supports ASP.NET Core and Blazor Server applications.
-
+BudgetWise is deployed on Fly.io as a Docker container. The app runs from the included `Dockerfile`, with configuration in `fly.toml`, and uses a persistent volume to store its SQLite database across restarts.
 
 ---
 
 ## Team Collaboration
 
-* Source code managed using a shared repository
-* Tasks organized using a Trello board
-* Team members collaborated through planning, development, testing, and documentation
+- Source code managed using a shared repository
+- Tasks organized using a Trello board
+- Team members collaborated through planning, development, testing, and documentation
 
 ---
 
 ## How This Project Meets Course Objectives
 
-* Uses the .NET Blazor framework
-* Implements authentication and CRUD functionality
-* Integrates a database using Entity Framework Core
-* Follows usability and accessibility best practices
-* Demonstrates effective teamwork
-* Includes cloud deployment
+- Uses the .NET Blazor framework
+- Implements authentication and CRUD functionality
+- Integrates a database using Entity Framework Core
+- Follows usability and accessibility best practices
+- Demonstrates effective teamwork
+- Includes cloud deployment
 
 ---
 
 ## Conclusion
 
-BudgetWise is a complete and functional .NET Blazor Server application that demonstrates core web development concepts, teamwork, and real-world application design. 
+BudgetWise is a complete and functional .NET Blazor Server application that demonstrates core web development concepts, teamwork, and real-world application design.
