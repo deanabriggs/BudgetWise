@@ -23,6 +23,12 @@ The project focuses on core functionality, usability and clean organization.
 
 ## Project Links
 
+<!--
+  ORIGINAL (team Azure DevOps repo, access lost after course ended):
+  - **Repository (Azure):**
+    https://dev.azure.com/CSE-325-BudgetWise-CAE/_git/ctrl-alt-elite-project
+  Replaced with the GitHub repo below, which Deana owns, for the portfolio copy.
+-->
 - **Repository (GitHub):**
   https://github.com/deanabriggs/BudgetWise
 
@@ -32,6 +38,7 @@ The project focuses on core functionality, usability and clean organization.
 - **Project Demonstration Video (YouTube):**
   https://youtu.be/AS2cN6RGXbk
 
+<!-- ORIGINAL: this field was left blank in the team README. -->
 - **Website (Fly.io):**
   https://budgetwise.fly.dev
 
@@ -98,6 +105,15 @@ dotnet run
 
 ## Deployment
 
+<!--
+  ORIGINAL (team README):
+  BudgetWise is deployed using Microsoft Azure App Service. Azure was selected
+  because it fully supports ASP.NET Core and Blazor Server applications.
+
+  Corrected below: the app was actually deployed on Fly.io (see Dockerfile and
+  fly.toml). The "Azure" references in the team project were the Azure DevOps
+  repo and Trello board (collaboration tools), not the app's runtime host.
+-->
 BudgetWise is deployed on Fly.io as a Docker container. The app runs from the included `Dockerfile`, with configuration in `fly.toml`, and uses a persistent volume to store its SQLite database across restarts.
 
 ---
