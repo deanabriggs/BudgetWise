@@ -27,6 +27,10 @@ namespace BudgetWise.Data
         // Indicates if this is an income category (true) or expense category (false).
         public bool IsIncome { get; set; }
 
+        // True for custom categories created by the demo-data seeder, so they can be
+        // bulk-removed. Shared default categories (UserId == null) are never demo rows.
+        public bool IsDemo { get; set; }
+
         // Navigation property back to the user (nullable for default categories).
         [ForeignKey(nameof(UserId))]
         public virtual User? User { get; set; }

@@ -36,6 +36,28 @@ else if (user is null)
 }
 else
 {
+    <!-- Demo data controls -->
+    @if (HasDemoData)
+    {
+        <div class="d-flex justify-content-end mb-3">
+            <button class="btn btn-sm btn-outline-danger" @onclick="RemoveDemoData" disabled="@IsDemoBusy">
+                @(IsDemoBusy ? "Removing…" : "Remove demo data")
+            </button>
+        </div>
+    }
+    else if (UserAccounts.Count == 0)
+    {
+        <div class="alert alert-info d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <span>
+                <strong>Exploring BudgetWise?</strong>
+                Load a set of sample accounts, transactions, and budgets to see every feature populated.
+            </span>
+            <button class="btn btn-primary" @onclick="LoadDemoData" disabled="@IsDemoBusy">
+                @(IsDemoBusy ? "Loading…" : "Load demo data")
+            </button>
+        </div>
+    }
+
     <!-- Motivational message -->
     <div class="row mb-3">
         <div class="col-md-12">
@@ -465,6 +487,10 @@ else
     private bool IsLoading = true;
     private string? ErrorMessage;
 
+    // Demo data controls
+    private bool IsDemoBusy;
+    private bool HasDemoData;
+
     // KPI Data
     private decimal TotalIncome;
     private decimal TotalExpensesRaw;
@@ -474,9 +500,6 @@ else
     // Budget totals for progress bars
     private decimal TotalBudgetedIncome;
     private decimal TotalBudgetedExpenses;
-
-    // Debts
-    private decimal TotalDebtBalance;
 
     // Date context
     private int CurrentMonth;
@@ -565,6 +588,7 @@ else
             await LoadCategoriesAsync();
             await LoadSourcesAsync();
             await LoadDashboard();
+            HasDemoData = await DemoDataSeeder.HasDemoDataAsync(Context, user.Id);
         }
         catch (Exception ex)
         {
@@ -583,6 +607,63 @@ else
         {
             await LoadCategoriesAsync();
         }
+    }
+
+    // ----- Demo data -----
+
+    private async Task LoadDemoData()
+    {
+        if (user is null) return;
+        IsDemoBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            await DemoDataSeeder.SeedAsync(Context, user.Id);
+            await ReloadAfterDemoChangeAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Could not load demo data: {ex.Message}";
+        }
+        finally
+        {
+            IsDemoBusy = false;
+        }
+    }
+
+    private async Task RemoveDemoData()
+    {
+        if (user is null) return;
+        IsDemoBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            await DemoDataSeeder.RemoveAsync(Context, user.Id);
+            await ReloadAfterDemoChangeAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Could not remove demo data: {ex.Message}";
+        }
+        finally
+        {
+            IsDemoBusy = false;
+        }
+    }
+
+    private async Task ReloadAfterDemoChangeAsync()
+    {
+        // Clear tracked entities so the reload reflects exactly what is in the database.
+        Context.ChangeTracker.Clear();
+
+        await LoadUserAccounts();
+        await LoadCategoriesAsync();
+        await LoadSourcesAsync();
+        await LoadDashboard();
+        HasDemoData = await DemoDataSeeder.HasDemoDataAsync(Context, user!.Id);
+
+        // Ask OnAfterRenderAsync to repaint the charts once the new DOM is in place.
+        _shouldRenderCharts = true;
     }
 
     private async Task LoadCategoriesAsync()
@@ -624,10 +705,16 @@ else
         }
     }
 
+    private bool _shouldRenderCharts = true;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && user != null)
+        // Render (or re-render) charts after the DOM updates whenever the underlying
+        // data changes — including after loading or removing demo data — so the
+        // <canvas> elements exist before Chart.js is invoked.
+        if (user != null && _shouldRenderCharts)
         {
+            _shouldRenderCharts = false;
             await RenderChartsAsync();
         }
     }
@@ -672,12 +759,6 @@ else
                         t.Date.Year == CurrentYear)
             .ToListAsync();
 
-        var incomes = await Context.Incomes
-            .Where(i => i.UserId == user.Id &&
-                        i.Date.Month == CurrentMonth &&
-                        i.Date.Year == CurrentYear)
-            .ToListAsync();
-
         var budgets = await Context.Budgets
             .Include(b => b.Category)
             .Where(b => b.UserId == user.Id &&
@@ -685,15 +766,8 @@ else
                         b.Year == CurrentYear)
             .ToListAsync();
 
-        var debts = await Context.Debts
-            .Where(d => d.UserId == user.Id)
-            .ToListAsync();
-
-        TotalDebtBalance = debts.Sum(d => d.CurrentBalance);
-
         // Income & expenses - use category type, not amount sign
-        TotalIncome = incomes.Sum(i => i.Amount) +
-                      transactions.Where(t => t.Category != null && t.Category.IsIncome).Sum(t => t.Amount);
+        TotalIncome = transactions.Where(t => t.Category != null && t.Category.IsIncome).Sum(t => t.Amount);
 
         TotalExpensesRaw = -transactions.Where(t => t.Category != null && !t.Category.IsIncome).Sum(t => t.Amount);
 
@@ -709,7 +783,7 @@ else
         // Derived data
         BuildBudgetSummaries(budgets, transactions);
         BuildCategoryBreakdown(transactions);
-        BuildDaySummaries(transactions, incomes);
+        BuildDaySummaries(transactions);
         await LoadLastMonthComparison();
         BuildMotivationalMessage();
 
@@ -790,16 +864,9 @@ else
         .ToList();
     }
 
-    private void BuildDaySummaries(List<UserTransaction> transactions, List<Income> incomes)
+    private void BuildDaySummaries(List<UserTransaction> transactions)
     {
         var map = new Dictionary<int, DaySummary>();
-
-        foreach (var inc in incomes)
-        {
-            var day = inc.Date.Day;
-            if (!map.ContainsKey(day)) map[day] = new DaySummary { Day = day };
-            map[day].Income += inc.Amount;
-        }
 
         foreach (var t in transactions)
         {
@@ -826,14 +893,7 @@ else
                         t.Date.Year == prev.Year)
             .ToListAsync();
 
-        var incomes = await Context.Incomes
-            .Where(i => i.UserId == user!.Id &&
-                        i.Date.Month == prev.Month &&
-                        i.Date.Year == prev.Year)
-            .ToListAsync();
-
-        LastMonthIncome = incomes.Sum(i => i.Amount) +
-                          transactions.Where(t => t.Category != null && t.Category.IsIncome).Sum(t => t.Amount);
+        LastMonthIncome = transactions.Where(t => t.Category != null && t.Category.IsIncome).Sum(t => t.Amount);
 
         LastMonthExpensesRaw = -transactions.Where(t => t.Category != null && !t.Category.IsIncome).Sum(t => t.Amount);
     }

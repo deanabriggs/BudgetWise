@@ -19,23 +19,11 @@ namespace BudgetWise.Data
         // Table for monthly budgets
         public DbSet<Budget> Budgets { get; set; } = default!;
 
-        // Income table
-        public DbSet<Income> Incomes { get; set; } = default!;
-
-        // NEW: Debts table
-        public DbSet<Debt> Debts { get; set; } = default!;
-
-        // NEW: Savings goals table
-        public DbSet<SavingsGoal> SavingsGoals { get; set; } = default!;
-
         // Categories table (default and custom user categories)
         public DbSet<Category> Categories { get; set; } = default!;
 
         // NEW: Accounts table
         public DbSet<Account> Accounts { get; set; } = default!;
-
-        // Sources table (reusable source names for transactions)
-        public DbSet<Source> Sources { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -74,27 +62,6 @@ namespace BudgetWise.Data
                 .HasIndex(b => new { b.UserId, b.CategoryId, b.Month, b.Year })
                 .IsUnique();
 
-            // ----------- INCOME RELATIONSHIP -----------
-            builder.Entity<Income>()
-                .HasOne< User >()
-                .WithMany(u => u.Incomes)
-                .HasForeignKey(i => i.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // ----------- DEBT RELATIONSHIP -----------
-            builder.Entity<Debt>()
-                .HasOne(d => d.User)
-                .WithMany(u => u.Debts)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // ----------- SAVINGS GOAL RELATIONSHIP -----------
-            builder.Entity<SavingsGoal>()
-                .HasOne(g => g.User)
-                .WithMany(u => u.SavingsGoals)
-                .HasForeignKey(g => g.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             // ----------- CATEGORY RELATIONSHIP -----------
             builder.Entity<Category>()
                 .HasOne(c => c.User)
@@ -105,18 +72,6 @@ namespace BudgetWise.Data
             // Note: Uniqueness is enforced in application code
             // For default categories (UserId = null): unique by Name
             // For user categories: unique by UserId + Name
-
-            // ----------- SOURCE RELATIONSHIP -----------
-            builder.Entity<Source>()
-                .HasOne(s => s.User)
-                .WithMany()
-                .HasForeignKey(s => s.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Prevent duplicate sources for same user + name
-            builder.Entity<Source>()
-                .HasIndex(s => new { s.UserId, s.Name })
-                .IsUnique();
         }
     }
 }

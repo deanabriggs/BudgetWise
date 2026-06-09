@@ -36,6 +36,9 @@ namespace BudgetWise.Data
         // Year (e.g., 2025). Combined with Month, gives us a calendar period.
         public int Year { get; set; }
 
+        // True for rows created by the demo-data seeder, so they can be bulk-removed.
+        public bool IsDemo { get; set; }
+
         // Navigation property back to the user.
         public virtual User User { get; set; } = null!;
     }

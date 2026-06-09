@@ -49,6 +49,9 @@ namespace BudgetWise.Data
             ErrorMessage = "Amount must be between -1,000,000 and 1,000,000.")]
         public decimal Amount { get; set; }
 
+        // True for rows created by the demo-data seeder, so they can be bulk-removed.
+        public bool IsDemo { get; set; }
+
         // Navigation property back to the User entity.
         // "virtual" allows EF Core to create proxies if needed.
         [ForeignKey(nameof(UserId))]

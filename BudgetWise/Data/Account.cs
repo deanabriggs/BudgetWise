@@ -34,6 +34,9 @@ namespace BudgetWise.Data
         [Column(TypeName = "decimal(18,2)")]
         public decimal CurrentBalance { get; set; } = 0;
 
+        // True for rows created by the demo-data seeder, so they can be bulk-removed.
+        public bool IsDemo { get; set; }
+
         [ForeignKey(nameof(UserId))]
         public virtual User User { get; set; } = null!;
 

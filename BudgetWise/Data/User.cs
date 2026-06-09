@@ -18,14 +18,5 @@ namespace BudgetWise.Data
 
         // All budgets for this user
         public List<Budget> Budgets { get; set; } = new();
-
-        // All income entries for this user
-        public List<Income> Incomes { get; set; } = new();
-
-        // NEW: All debts (car loan, house, school, etc.)
-        public List<Debt> Debts { get; set; } = new();
-
-        // NEW: Savings goals (emergency fund, vacation, etc.)
-        public List<SavingsGoal> SavingsGoals { get; set; } = new();
     }
 }
