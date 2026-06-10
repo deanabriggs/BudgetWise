@@ -4,12 +4,6 @@
 
 **🔗 Live demo:** https://budgetwise.fly.dev &nbsp;•&nbsp; **💻 Source:** https://github.com/deanabriggs/BudgetWise
 
-<!--
-  ORIGINAL (team Azure DevOps repo, access lost after the course ended):
-  https://dev.azure.com/CSE-325-BudgetWise-CAE/_git/ctrl-alt-elite-project
-  Replaced with the GitHub repo above, which Deana owns, for the portfolio copy.
--->
-
 ---
 
 ## Overview
@@ -31,43 +25,49 @@ On the engineering side, it uses **ASP.NET Core Identity** for authentication (c
 ## Features
 
 **Accounts & balances**
+
 - Six account types — Checking, Savings, Cash, Retirement, Credit Card, and Loan — grouped into assets vs. debts.
 - Balances are recalculated automatically from each account’s transactions.
 
 **Transactions**
+
 - Add, edit, and delete transactions tied to a specific account and category, with a reusable “source” (merchant/employer) autocomplete.
 - Bulk **import** transactions through an import dialog.
 
 **Budgets (the “plan”)**
+
 - Set monthly spending limits per category, for both income and expense categories.
 - Compare planned vs. actual to see what’s remaining.
 
 **Categories**
+
 - A set of sensible default categories plus your own custom income/expense categories.
 
 **Dashboard (the “report”)**
+
 - Income, expense, and profit/loss KPIs with month-over-month comparison.
 - Budget progress, an estimated net-worth summary, spending-by-category breakdown, and a daily income/expense trend — rendered with **Chart.js**.
 - Searchable recent-transaction list and a quick-add form.
 
 **Accounts, auth & data**
+
 - Secure registration, login, and account management via ASP.NET Core Identity.
 - Server-side validation and safe error handling throughout.
 - Responsive Bootstrap layout with accessibility-minded labels and focus styles.
 
 ## Technology
 
-| Area | Stack |
-| --- | --- |
-| Language / runtime | C#, .NET 8 |
-| Web framework | Blazor Server (interactive server components), ASP.NET Core, Razor Pages |
-| Authentication | ASP.NET Core Identity |
-| Data | Entity Framework Core 8 (code-first migrations), SQLite |
-| Front end | Bootstrap 5, custom CSS, Chart.js via JS interop |
-| Containerization | Docker (multi-stage build) |
-| Hosting | Fly.io (persistent volume for the SQLite database) |
-| CI/CD | GitHub Actions → automatic deploy to Fly.io on every push |
-| Source control | Git / GitHub (mirrored to Azure DevOps) |
+| Area               | Stack                                                                    |
+| ------------------ | ------------------------------------------------------------------------ |
+| Language / runtime | C#, .NET 8                                                               |
+| Web framework      | Blazor Server (interactive server components), ASP.NET Core, Razor Pages |
+| Authentication     | ASP.NET Core Identity                                                    |
+| Data               | Entity Framework Core 8 (code-first migrations), SQLite                  |
+| Front end          | Bootstrap 5, custom CSS, Chart.js via JS interop                         |
+| Containerization   | Docker (multi-stage build)                                               |
+| Hosting            | Fly.io (persistent volume for the SQLite database)                       |
+| CI/CD              | GitHub Actions → automatic deploy to Fly.io on every push                |
+| Source control     | Git / GitHub (mirrored to Azure DevOps)                                  |
 
 ## Architecture at a glance
 
@@ -129,5 +129,11 @@ BudgetWise began as a group project for a .NET course (team **ctrl-alt-elite**) 
 <!-- ORIGINAL team links retained for reference:
      Trello board (Azure DevOps): https://dev.azure.com/CSE-325-BudgetWise-CAE/ctrl-alt-elite-project/_boards/board/t/ctrl-alt-elite-project%20Team/Issues
      Website field was left blank in the original team README. -->
+
+<!--
+  ORIGINAL (team Azure DevOps repo, access lost after the course ended):
+  https://dev.azure.com/CSE-325-BudgetWise-CAE/_git/ctrl-alt-elite-project
+  Replaced with the GitHub repo above, which Deana owns, for the portfolio copy.
+-->
 
 </details>
