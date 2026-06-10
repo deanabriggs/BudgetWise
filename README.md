@@ -109,6 +109,7 @@ I took a **leading role across the full lifecycle** of this project:
 - **Troubleshooting & testing** — diagnosed and resolved bugs, data-flow issues, and deployment failures, and validated behavior end-to-end.
 - **Editing & polishing** — refined the UI, cleaned up the data model (removing unused tables), and improved error handling and usability.
 - **Deployment** — containerized the app and set up hosting on Fly.io with an automated GitHub Actions CI/CD pipeline.
+- **Collaboration** — worked within a team using **Azure DevOps**, with Azure Repos for version control and Azure Boards for project management and task tracking.
 
 ---
 
