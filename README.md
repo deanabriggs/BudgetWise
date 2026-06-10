@@ -18,11 +18,7 @@ BudgetWise is a .NET 8 **Blazor Server** application for managing personal finan
 
 It is designed for individuals and students who want a clean, organized way to track their money without a spreadsheet.
 
-On the engineering side, the app emphasizes secure, resilient handling of user data:
-
-- **Authentication** — ASP.NET Core Identity provides cookie-based sign-in with hashed passwords and account management; pages are protected with `[Authorize]` attributes, and every record is scoped to the signed-in user.
-- **Validation** — models use data annotations (`Required`, `StringLength`, `Range`) enforced on the server, surfaced in the UI through Blazor `EditForm` with `DataAnnotationsValidator` and validation messages, plus explicit checks (e.g., that a referenced account or category exists) before any save.
-- **Error handling** — database operations are wrapped in `try`/`catch` that catch `DbUpdateException` and other failures and return friendly messages instead of crashing, backed by a global exception handler and a custom error page.
+On the engineering side, it uses **ASP.NET Core Identity** for authentication (cookie-based login with hashed passwords and per-user data scoping), validates input with **data annotations** surfaced through Blazor’s `EditForm`, and handles errors gracefully with `try`/`catch` and a global exception handler so invalid input or failures never crash the app.
 
 ## Try it in 30 seconds
 
